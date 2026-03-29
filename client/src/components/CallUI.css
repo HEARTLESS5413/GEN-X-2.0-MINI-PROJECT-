@@ -343,16 +343,16 @@
 /* Local PiP */
 .call-local-pip {
   position: absolute;
-  top: 80px;
+  bottom: 110px;
   right: 24px;
-  width: 180px;
-  height: 135px;
-  border-radius: 20px;
+  width: 200px;
+  height: 150px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 2px solid rgba(139, 92, 246, 0.4);
+  border: 2px solid rgba(139, 92, 246, 0.5);
   z-index: 20;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
-  cursor: grab;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  background: #0a0a14;
 }
 
 .call-local-video {
@@ -365,13 +365,68 @@
 .call-cam-off {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: linear-gradient(135deg, #0f0f23, #1a1a2e);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.call-cam-off span:first-child {
+  font-size: 28px;
+}
+
+/* Remote camera off overlay */
+.call-remote-cam-off {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(135deg, #0a0a14 0%, #0f0f23 50%, #12121f 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.call-camoff-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);
+  animation: camoffPulse 3s ease-in-out infinite;
+}
+
+.call-camoff-avatar-fb {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 48px;
+  font-weight: 800;
+  color: white;
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);
+  animation: camoffPulse 3s ease-in-out infinite;
+}
+
+@keyframes camoffPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.2); }
+  50% { box-shadow: 0 0 50px rgba(139, 92, 246, 0.4); }
+}
+
+.call-camoff-text {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  font-weight: 500;
 }
 
 /* =========== CONTROLS BAR =========== */
@@ -587,11 +642,11 @@
   }
 
   .call-local-pip {
-    width: 120px;
-    height: 90px;
-    top: 70px;
+    width: 140px;
+    height: 105px;
+    bottom: 90px;
     right: 12px;
-    border-radius: 14px;
+    border-radius: 12px;
   }
 
   .call-floating-mini {

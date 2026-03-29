@@ -17,7 +17,7 @@ const ICE_SERVERS: RTCConfiguration = {
 export default function CallProvider() {
   const { user } = useAuthStore();
   const store = useCallStore();
-  const { phase, callId, callType, remoteUser, isCaller, isMuted, isCameraOff, isScreenSharing, isMinimized, duration } = store;
+  const { phase, callId, callType, remoteUser, isCaller, isMuted, isCameraOff, isScreenSharing, isMinimized, duration, remoteCameraOff } = store;
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -153,6 +153,12 @@ export default function CallProvider() {
     socket.on('webrtcAnswer', handleAnswer);
     socket.on('webrtcIceCandidate', handleIce);
 
+    // Remote camera off/on signal
+    const handleRemoteCameraToggle = ({ cameraOff }: any) => {
+      store.setRemoteCameraOff(cameraOff);
+    };
+    socket.on('remoteCameraToggle', handleRemoteCameraToggle);
+
     return () => {
       socket.off('incomingCall', handleIncoming);
       socket.off('callInitiated', handleCallInitiated);
@@ -162,6 +168,7 @@ export default function CallProvider() {
       socket.off('webrtcOffer', handleOffer);
       socket.off('webrtcAnswer', handleAnswer);
       socket.off('webrtcIceCandidate', handleIce);
+      socket.off('remoteCameraToggle', handleRemoteCameraToggle);
     };
   }, []);
 
@@ -262,6 +269,17 @@ export default function CallProvider() {
         }
         // Set up audio analyser for remote stream
         setupRemoteAudioAnalyser(e.streams[0]);
+
+        // Detect when remote user disables their video track
+        const videoTrack = e.streams[0].getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.onmute = () => store.setRemoteCameraOff(true);
+          videoTrack.onunmute = () => store.setRemoteCameraOff(false);
+          // Check initial state
+          if (!videoTrack.enabled || videoTrack.muted) {
+            store.setRemoteCameraOff(true);
+          }
+        }
       }
     };
 
@@ -432,6 +450,12 @@ export default function CallProvider() {
     if (localStreamRef.current) {
       localStreamRef.current.getVideoTracks().forEach(t => { t.enabled = !t.enabled; });
       store.toggleCamera();
+      // Signal the remote user about camera state
+      const socket = getSocket();
+      const s = useCallStore.getState();
+      if (socket && s.remoteUser) {
+        socket.emit('cameraToggle', { targetUserId: s.remoteUser.id, cameraOff: s.isCameraOff });
+      }
     }
   }, []);
 
@@ -512,6 +536,13 @@ export default function CallProvider() {
     (window as any).__callProvider = { initiateCall, acceptCall, rejectCall, endCall, toggleMute, toggleCamera, toggleScreenShare, switchToVideo };
     return () => { delete (window as any).__callProvider; };
   }, [initiateCall, acceptCall, rejectCall, endCall, toggleMute, toggleCamera, toggleScreenShare, switchToVideo]);
+
+  // Ensure local video is bound when phase/callType change
+  useEffect(() => {
+    if (phase === 'active' && localStreamRef.current && localVideoRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+    }
+  }, [phase, callType, isCameraOff]);
 
   // =========== DRAG HANDLING ===========
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
@@ -617,9 +648,21 @@ export default function CallProvider() {
       {/* Hidden audio element ensures remote audio always plays even in audio-only call */}
       <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
       <div className="call-fullscreen">
-        {/* Background */}
+        {/* Remote Video / Camera Off */}
         {callType === 'VIDEO' && phase === 'active' && (
-          <video ref={remoteVideoRef} autoPlay playsInline className="call-remote-video" />
+          <>
+            <video ref={remoteVideoRef} autoPlay playsInline className="call-remote-video" style={{ display: remoteCameraOff ? 'none' : 'block' }} />
+            {remoteCameraOff && (
+              <div className="call-remote-cam-off">
+                {avatar ? (
+                  <img src={avatar} alt="" className="call-camoff-avatar" />
+                ) : (
+                  <div className="call-camoff-avatar-fb">{initial}</div>
+                )}
+                <p className="call-camoff-text">{remoteUser?.username}&apos;s camera is off</p>
+              </div>
+            )}
+          </>
         )}
 
         {callType === 'AUDIO' && phase === 'active' && (
@@ -688,11 +731,16 @@ export default function CallProvider() {
           </div>
         )}
 
-        {/* Local PiP */}
+        {/* Local PiP — always visible during active video call */}
         {callType === 'VIDEO' && phase === 'active' && (
-          <div className="call-local-pip" onMouseDown={handleDragStart} onTouchStart={handleDragStart}>
+          <div className="call-local-pip">
             <video ref={localVideoRef} autoPlay playsInline muted className="call-local-video" />
-            {isCameraOff && <div className="call-cam-off">📷 Off</div>}
+            {isCameraOff && (
+              <div className="call-cam-off">
+                <span>📷</span>
+                <span>Camera Off</span>
+              </div>
+            )}
           </div>
         )}
 

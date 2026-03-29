@@ -21,6 +21,7 @@ interface CallState {
   isScreenSharing: boolean;
   isMinimized: boolean;
   duration: number;
+  remoteCameraOff: boolean;
 
   // Actions
   startOutgoing: (user: CallUser, type: CallType) => void;
@@ -34,6 +35,7 @@ interface CallState {
   toggleMinimize: () => void;
   tickDuration: () => void;
   switchToVideo: () => void;
+  setRemoteCameraOff: (off: boolean) => void;
   reset: () => void;
 }
 
@@ -48,6 +50,7 @@ const initialState = {
   isScreenSharing: false,
   isMinimized: false,
   duration: 0,
+  remoteCameraOff: false,
 };
 
 export const useCallStore = create<CallState>((set) => ({
@@ -63,6 +66,7 @@ export const useCallStore = create<CallState>((set) => ({
     isScreenSharing: false,
     isMinimized: false,
     duration: 0,
+    remoteCameraOff: false,
   }),
 
   setIncoming: (callId, caller, type) => set({
@@ -76,6 +80,7 @@ export const useCallStore = create<CallState>((set) => ({
     isScreenSharing: false,
     isMinimized: false,
     duration: 0,
+    remoteCameraOff: false,
   }),
 
   setActive: (callId) => set({ phase: 'active', callId, duration: 0 }),
@@ -87,5 +92,6 @@ export const useCallStore = create<CallState>((set) => ({
   toggleMinimize: () => set((s) => ({ isMinimized: !s.isMinimized })),
   tickDuration: () => set((s) => ({ duration: s.duration + 1 })),
   switchToVideo: () => set({ callType: 'VIDEO' }),
+  setRemoteCameraOff: (off) => set({ remoteCameraOff: off }),
   reset: () => set(initialState),
 }));

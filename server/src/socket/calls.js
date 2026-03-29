@@ -123,6 +123,14 @@ function callHandler(io, socket, prisma, onlineUsers) {
       candidate
     });
   });
+
+  // Camera toggle relay
+  socket.on('cameraToggle', ({ targetUserId, cameraOff }) => {
+    io.to(`user:${targetUserId}`).emit('remoteCameraToggle', {
+      from: socket.userId,
+      cameraOff
+    });
+  });
 }
 
 module.exports = callHandler;
