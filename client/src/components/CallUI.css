@@ -258,35 +258,36 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 8px;
   z-index: 5;
+}
+
+.call-audio-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  letter-spacing: 0.5px;
 }
 
 .call-audio-wave {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  height: 80px;
+  height: 100px;
+  min-width: 120px;
 }
 
 .call-audio-wave span {
   width: 6px;
+  min-height: 6px;
   border-radius: 3px;
   background: linear-gradient(to top, #8B5CF6, #EC4899);
-  animation: audioWave 1.2s ease-in-out infinite;
 }
 
-.call-audio-wave span:nth-child(1) { height: 20px; animation-delay: 0s; }
-.call-audio-wave span:nth-child(2) { height: 35px; animation-delay: 0.1s; }
-.call-audio-wave span:nth-child(3) { height: 50px; animation-delay: 0.2s; }
-.call-audio-wave span:nth-child(4) { height: 70px; animation-delay: 0.15s; }
-.call-audio-wave span:nth-child(5) { height: 50px; animation-delay: 0.25s; }
-.call-audio-wave span:nth-child(6) { height: 35px; animation-delay: 0.35s; }
-.call-audio-wave span:nth-child(7) { height: 20px; animation-delay: 0.4s; }
-
-@keyframes audioWave {
-  0%, 100% { transform: scaleY(0.4); opacity: 0.4; }
-  50% { transform: scaleY(1); opacity: 1; }
+.call-audio-wave-local span {
+  background: linear-gradient(to top, #10B981, #34D399);
 }
 
 /* Ringing center */

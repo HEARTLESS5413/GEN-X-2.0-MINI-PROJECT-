@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useCallStore } from '@/store/callStore';
 import { useAuthStore } from '@/store/authStore';
 import { getSocket } from '@/lib/socket';
@@ -27,10 +27,17 @@ export default function CallProvider() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidate[]>([]);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const ringtoneRef = useRef<HTMLAudioElement | null>(null);
   const outgoingToneRef = useRef<HTMLAudioElement | null>(null);
   const dragRef = useRef<{ startX: number; startY: number; x: number; y: number } | null>(null);
   const floatingRef = useRef<HTMLDivElement>(null);
+  const remoteAnalyserRef = useRef<AnalyserNode | null>(null);
+  const localAnalyserRef = useRef<AnalyserNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const [remoteAudioLevel, setRemoteAudioLevel] = useState(0);
+  const [localAudioLevel, setLocalAudioLevel] = useState(0);
 
   // =========== SOCKET LISTENERS ===========
   useEffect(() => {
@@ -243,8 +250,18 @@ export default function CallProvider() {
     };
 
     pc.ontrack = (e) => {
-      if (remoteVideoRef.current && e.streams[0]) {
-        remoteVideoRef.current.srcObject = e.streams[0];
+      if (e.streams[0]) {
+        // Always attach to video ref if it exists
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = e.streams[0];
+        }
+        // Always attach audio to the dedicated audio element
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = e.streams[0];
+          remoteAudioRef.current.play().catch(() => {});
+        }
+        // Set up audio analyser for remote stream
+        setupRemoteAudioAnalyser(e.streams[0]);
       }
     };
 
@@ -257,6 +274,73 @@ export default function CallProvider() {
     pcRef.current = pc;
     return pc;
   }, []);
+
+  // =========== AUDIO LEVEL ANALYSIS ===========
+  const setupRemoteAudioAnalyser = useCallback((stream: MediaStream) => {
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new AudioContext();
+      }
+      const ctx = audioCtxRef.current;
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.5;
+      source.connect(analyser);
+      // DON'T connect analyser to destination — the <audio> element handles playback
+      remoteAnalyserRef.current = analyser;
+    } catch (err) {
+      console.error('Remote analyser error:', err);
+    }
+  }, []);
+
+  const setupLocalAudioAnalyser = useCallback((stream: MediaStream) => {
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new AudioContext();
+      }
+      const ctx = audioCtxRef.current;
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.5;
+      source.connect(analyser);
+      localAnalyserRef.current = analyser;
+    } catch (err) {
+      console.error('Local analyser error:', err);
+    }
+  }, []);
+
+  // Audio level polling loop
+  useEffect(() => {
+    if (phase !== 'active') {
+      setRemoteAudioLevel(0);
+      setLocalAudioLevel(0);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      return;
+    }
+
+    const poll = () => {
+      if (remoteAnalyserRef.current) {
+        const data = new Uint8Array(remoteAnalyserRef.current.frequencyBinCount);
+        remoteAnalyserRef.current.getByteFrequencyData(data);
+        const avg = data.reduce((sum, v) => sum + v, 0) / data.length;
+        setRemoteAudioLevel(avg / 255); // 0-1
+      }
+      if (localAnalyserRef.current) {
+        const data = new Uint8Array(localAnalyserRef.current.frequencyBinCount);
+        localAnalyserRef.current.getByteFrequencyData(data);
+        const avg = data.reduce((sum, v) => sum + v, 0) / data.length;
+        setLocalAudioLevel(avg / 255); // 0-1
+      }
+      animFrameRef.current = requestAnimationFrame(poll);
+    };
+    animFrameRef.current = requestAnimationFrame(poll);
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [phase]);
 
   // =========== CALL ACTIONS ===========
   const initiateCall = useCallback(async (targetUser: any, type: 'AUDIO' | 'VIDEO') => {
@@ -272,6 +356,9 @@ export default function CallProvider() {
       });
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+      // Set up local audio analyser for speaking detection
+      setupLocalAudioAnalyser(stream);
 
       const pc = setupPC(targetUser.id);
       if (pc) stream.getTracks().forEach(t => pc.addTrack(t, stream));
@@ -300,6 +387,9 @@ export default function CallProvider() {
       });
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+      // Set up local audio analyser for speaking detection
+      setupLocalAudioAnalyser(stream);
 
       const pc = setupPC(s.remoteUser.id);
       if (pc) stream.getTracks().forEach(t => pc.addTrack(t, stream));
@@ -408,7 +498,12 @@ export default function CallProvider() {
     if (pcRef.current) { pcRef.current.close(); pcRef.current = null; }
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null; }
+    if (audioCtxRef.current) { try { audioCtxRef.current.close(); } catch {} audioCtxRef.current = null; }
+    remoteAnalyserRef.current = null;
+    localAnalyserRef.current = null;
     pendingCandidatesRef.current = [];
+    if (remoteAudioRef.current) { remoteAudioRef.current.srcObject = null; }
     useCallStore.getState().reset();
   };
 
@@ -454,7 +549,8 @@ export default function CallProvider() {
   };
 
   // =========== RENDER NOTHING IF IDLE ===========
-  if (phase === 'idle') return null;
+  // Hidden audio element for remote audio playback (always present when not idle)
+  if (phase === 'idle') return <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />;
 
   const avatar = remoteUser?.avatar ? `${UPLOADS_URL}${remoteUser.avatar}` : null;
   const initial = remoteUser?.name?.[0]?.toUpperCase() || '?';
@@ -518,6 +614,8 @@ export default function CallProvider() {
   // =========== FULL SCREEN CALL UI ===========
   return (
     <div className="call-overlay">
+      {/* Hidden audio element ensures remote audio always plays even in audio-only call */}
+      <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
       <div className="call-fullscreen">
         {/* Background */}
         {callType === 'VIDEO' && phase === 'active' && (
@@ -526,8 +624,33 @@ export default function CallProvider() {
 
         {callType === 'AUDIO' && phase === 'active' && (
           <div className="call-audio-bg">
+            {/* Remote user's audio visualisation */}
+            <div className="call-audio-label">🔊 {remoteUser?.username}</div>
             <div className="call-audio-wave">
-              <span /><span /><span /><span /><span /><span /><span />
+              {[0.6, 0.8, 1.0, 1.2, 1.0, 0.8, 0.6].map((scale, i) => (
+                <span
+                  key={`r-${i}`}
+                  style={{
+                    height: `${Math.max(6, remoteAudioLevel * 80 * scale)}px`,
+                    opacity: remoteAudioLevel > 0.02 ? 0.6 + remoteAudioLevel * 0.4 : 0.15,
+                    transition: 'height 0.08s ease, opacity 0.08s ease',
+                  }}
+                />
+              ))}
+            </div>
+            {/* Local user's audio visualisation */}
+            <div className="call-audio-label" style={{ marginTop: 24 }}>🎙️ You {isMuted ? '(Muted)' : ''}</div>
+            <div className="call-audio-wave call-audio-wave-local">
+              {[0.6, 0.8, 1.0, 1.2, 1.0, 0.8, 0.6].map((scale, i) => (
+                <span
+                  key={`l-${i}`}
+                  style={{
+                    height: `${Math.max(6, (isMuted ? 0 : localAudioLevel) * 80 * scale)}px`,
+                    opacity: !isMuted && localAudioLevel > 0.02 ? 0.6 + localAudioLevel * 0.4 : 0.15,
+                    transition: 'height 0.08s ease, opacity 0.08s ease',
+                  }}
+                />
+              ))}
             </div>
           </div>
         )}
