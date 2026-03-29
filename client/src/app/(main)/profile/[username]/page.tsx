@@ -20,6 +20,14 @@ export default function ProfilePage() {
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
   const avatarRef = useRef<HTMLInputElement>(null);
 
+  // Followers/Following modal state
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [followersList, setFollowersList] = useState<any[]>([]);
+  const [followingList, setFollowingList] = useState<any[]>([]);
+  const [listPrivate, setListPrivate] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
+
   useEffect(() => {
     loadProfile();
   }, [username]);
@@ -89,8 +97,85 @@ export default function ProfilePage() {
     } catch {}
   };
 
+  const openFollowersModal = async () => {
+    if (!profile) return;
+    setShowFollowersModal(true);
+    setListLoading(true);
+    setListPrivate(false);
+    try {
+      const { data } = await usersAPI.getFollowers(profile.id);
+      if (data.private) {
+        setListPrivate(true);
+        setFollowersList([]);
+      } else {
+        setFollowersList(data.users || []);
+      }
+    } catch {}
+    finally { setListLoading(false); }
+  };
+
+  const openFollowingModal = async () => {
+    if (!profile) return;
+    setShowFollowingModal(true);
+    setListLoading(true);
+    setListPrivate(false);
+    try {
+      const { data } = await usersAPI.getFollowing(profile.id);
+      if (data.private) {
+        setListPrivate(true);
+        setFollowingList([]);
+      } else {
+        setFollowingList(data.users || []);
+      }
+    } catch {}
+    finally { setListLoading(false); }
+  };
+
   if (loading) return <div className="page-loading"><div className="spinner"></div></div>;
   if (!profile) return <div className={styles.notFound}><h2>User not found</h2></div>;
+
+  const UserListModal = ({ title, users, isOpen, onClose }: { title: string; users: any[]; isOpen: boolean; onClose: () => void }) => {
+    if (!isOpen) return null;
+    return (
+      <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+        <div className={styles.userListModal}>
+          <div className={styles.modalHeader}>
+            <h3 className="gradient-text">{title}</h3>
+            <button className={styles.modalClose} onClick={onClose}>✕</button>
+          </div>
+          <div className={styles.modalBody}>
+            {listLoading ? (
+              <div className={styles.modalEmpty}><div className="spinner"></div></div>
+            ) : listPrivate ? (
+              <div className={styles.privateOverlay}>
+                <div className={styles.privateIcon}>🔒</div>
+                <h4>This account is private</h4>
+                <p>Follow this account to see their {title.toLowerCase()}</p>
+              </div>
+            ) : users.length === 0 ? (
+              <div className={styles.modalEmpty}>
+                <p style={{ color: 'var(--text-muted)' }}>No {title.toLowerCase()} yet</p>
+              </div>
+            ) : (
+              users.map(u => (
+                <Link key={u.id} href={`/profile/${u.username}`} className={styles.userListItem} onClick={onClose}>
+                  {u.avatar ? (
+                    <img src={`${UPLOADS_URL}${u.avatar}`} alt="" className={styles.userListAvatar} />
+                  ) : (
+                    <div className={styles.userListAvatarFallback}>{u.name[0]}</div>
+                  )}
+                  <div className={styles.userListInfo}>
+                    <span className={styles.userListName}>{u.name}</span>
+                    <span className={styles.userListUsername}>@{u.username}</span>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={styles.profilePage}>
@@ -115,12 +200,17 @@ export default function ProfilePage() {
             <div className={styles.nameRow}>
               <h1 className={styles.displayName}>{profile.name}</h1>
               <span className={styles.usernameTag}>@{profile.username}</span>
+              {profile.accountType === 'PRIVATE' && <span className={styles.privateBadge}>🔒</span>}
             </div>
             {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
             <div className={styles.stats}>
               <div className={styles.stat}><strong>{profile._count.posts}</strong><span>Posts</span></div>
-              <div className={styles.stat}><strong>{profile._count.followers}</strong><span>Followers</span></div>
-              <div className={styles.stat}><strong>{profile._count.following}</strong><span>Following</span></div>
+              <div className={`${styles.stat} ${styles.statClickable}`} onClick={openFollowersModal}>
+                <strong>{profile._count.followers}</strong><span>Followers</span>
+              </div>
+              <div className={`${styles.stat} ${styles.statClickable}`} onClick={openFollowingModal}>
+                <strong>{profile._count.following}</strong><span>Following</span>
+              </div>
             </div>
 
             <div className={styles.actionBtns}>
@@ -129,10 +219,10 @@ export default function ProfilePage() {
               ) : (
                 <>
                   <button
-                    className={`btn ${profile.isFollowing ? 'btn-secondary' : 'btn-primary'}`}
+                    className={`btn ${profile.isFollowing ? 'btn-secondary' : profile.isPending ? 'btn-secondary' : 'btn-primary'}`}
                     onClick={handleFollow}
                   >
-                    {profile.isFollowing ? 'Following' : profile.isPending ? 'Requested' : 'Follow'}
+                    {profile.isFollowing ? 'Following' : profile.isPending ? '⏳ Requested' : 'Follow'}
                   </button>
                   <Link href={`/messages/${profile.id}`} className="btn btn-secondary">💬 Message</Link>
                 </>
@@ -224,6 +314,22 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Followers Modal */}
+      <UserListModal
+        title="Followers"
+        users={followersList}
+        isOpen={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+      />
+
+      {/* Following Modal */}
+      <UserListModal
+        title="Following"
+        users={followingList}
+        isOpen={showFollowingModal}
+        onClose={() => setShowFollowingModal(false)}
+      />
     </div>
   );
 }

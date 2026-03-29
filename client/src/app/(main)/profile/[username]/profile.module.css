@@ -132,6 +132,23 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+.statClickable {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+.statClickable:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+.statClickable:hover strong {
+  color: var(--accent-primary);
+}
+
+.privateBadge {
+  font-size: 14px;
+  opacity: 0.7;
+}
 
 .actionBtns {
   display: flex;
@@ -246,6 +263,133 @@
   color: var(--text-muted);
 }
 
+/* Followers/Following Modal */
+.userListModal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  width: 380px;
+  max-width: 90vw;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: modalIn 0.25s ease;
+}
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.modalHeader h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+.modalClose {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+.modalClose:hover { color: var(--text-primary); }
+.modalBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.modalEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+.userListItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.userListItem:hover {
+  background: rgba(139, 92, 246, 0.06);
+}
+.userListAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+}
+.userListAvatarFallback {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.userListInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.userListName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.userListUsername {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-secondary);
+}
+
+/* Private account overlay */
+.privateOverlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  gap: 8px;
+}
+.privateIcon {
+  font-size: 40px;
+  margin-bottom: 4px;
+}
+.privateOverlay h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.privateOverlay p {
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 220px;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 @media (max-width: 768px) {
   .profilePage { padding: 0 12px 40px; }
   .headerContent { flex-direction: column; align-items: center; text-align: center; gap: 16px; }
@@ -256,4 +400,5 @@
   .headerBg { height: 120px; }
   .profileAvatar, .avatarLarge { width: 90px; height: 90px; }
   .avatarLarge { font-size: 32px; }
+  .userListModal { width: 100%; max-width: 100vw; border-radius: var(--radius-md) var(--radius-md) 0 0; }
 }

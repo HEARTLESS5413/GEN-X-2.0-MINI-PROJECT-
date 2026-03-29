@@ -92,7 +92,7 @@ router.post('/avatar', auth, uploadAvatar, async (req, res) => {
   }
 });
 
-// Follow/Unfollow user
+// Follow/Unfollow user — ALL follows now start as PENDING
 router.post('/follow/:userId', auth, async (req, res) => {
   try {
     const { userId } = req.params;
@@ -108,33 +108,30 @@ router.post('/follow/:userId', auth, async (req, res) => {
     });
 
     if (existingFollow) {
-      // Unfollow
+      // Unfollow / Cancel request
       await prisma.follow.delete({ where: { id: existingFollow.id } });
       return res.json({ action: 'unfollowed' });
     }
 
-    // Follow
-    const status = targetUser.accountType === 'PRIVATE' ? 'PENDING' : 'ACCEPTED';
+    // All follows start as PENDING
     await prisma.follow.create({
-      data: { followerId: req.user.id, followingId: userId, status }
+      data: { followerId: req.user.id, followingId: userId, status: 'PENDING' }
     });
 
-    // Create notification
+    // Create follow request notification
     const io = req.app.get('io');
     const notification = await prisma.notification.create({
       data: {
         userId: userId,
         senderId: req.user.id,
-        type: status === 'PENDING' ? 'FOLLOW_REQUEST' : 'FOLLOW_ACCEPT',
-        content: status === 'PENDING' 
-          ? `${req.user.username} sent you a follow request` 
-          : `${req.user.username} started following you`,
+        type: 'FOLLOW_REQUEST',
+        content: `${req.user.username} sent you a follow request`,
       },
       include: { sender: { select: { id: true, username: true, avatar: true, name: true } } }
     });
     io.to(`user:${userId}`).emit('notification', notification);
 
-    res.json({ action: status === 'PENDING' ? 'requested' : 'followed' });
+    res.json({ action: 'requested' });
   } catch (error) {
     console.error('Follow error:', error);
     res.status(500).json({ error: 'Server error.' });
@@ -146,16 +143,18 @@ router.post('/follow-request/:followId/:action', auth, async (req, res) => {
   try {
     const { followId, action } = req.params;
     const follow = await prisma.follow.findFirst({
-      where: { id: followId, followingId: req.user.id, status: 'PENDING' }
+      where: { id: followId, followingId: req.user.id, status: 'PENDING' },
+      include: { follower: { select: { id: true, username: true, name: true, avatar: true } } }
     });
 
     if (!follow) return res.status(404).json({ error: 'Follow request not found.' });
 
+    const io = req.app.get('io');
+
     if (action === 'accept') {
       await prisma.follow.update({ where: { id: followId }, data: { status: 'ACCEPTED' } });
       
-      // Notify
-      const io = req.app.get('io');
+      // Notify the follower that their request was accepted
       const notification = await prisma.notification.create({
         data: {
           userId: follow.followerId,
@@ -166,11 +165,15 @@ router.post('/follow-request/:followId/:action', auth, async (req, res) => {
         include: { sender: { select: { id: true, username: true, avatar: true, name: true } } }
       });
       io.to(`user:${follow.followerId}`).emit('notification', notification);
+      io.to(`user:${follow.followerId}`).emit('followRequestAccepted', { userId: req.user.id });
 
-      return res.json({ action: 'accepted' });
+      return res.json({ action: 'accepted', follower: follow.follower });
     }
 
+    // Decline — delete the follow record and notify
     await prisma.follow.delete({ where: { id: followId } });
+    io.to(`user:${follow.followerId}`).emit('followRequestDeclined', { userId: req.user.id });
+
     res.json({ action: 'rejected' });
   } catch (error) {
     console.error('Follow request error:', error);
@@ -178,27 +181,70 @@ router.post('/follow-request/:followId/:action', auth, async (req, res) => {
   }
 });
 
-// Get followers
+// Get pending follow requests for current user
+router.get('/follow-requests', auth, async (req, res) => {
+  try {
+    const requests = await prisma.follow.findMany({
+      where: { followingId: req.user.id, status: 'PENDING' },
+      include: {
+        follower: { select: { id: true, username: true, name: true, avatar: true, bio: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(requests);
+  } catch (error) {
+    console.error('Get follow requests error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// Get followers (with privacy check)
 router.get('/:userId/followers', auth, async (req, res) => {
   try {
+    const targetUser = await prisma.user.findUnique({ where: { id: req.params.userId } });
+    if (!targetUser) return res.status(404).json({ error: 'User not found.' });
+
+    // Privacy check: if private account and not own profile, check if current user follows them
+    if (targetUser.accountType === 'PRIVATE' && req.params.userId !== req.user.id) {
+      const followRecord = await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: req.user.id, followingId: req.params.userId } }
+      });
+      if (!followRecord || followRecord.status !== 'ACCEPTED') {
+        return res.json({ private: true, users: [] });
+      }
+    }
+
     const follows = await prisma.follow.findMany({
       where: { followingId: req.params.userId, status: 'ACCEPTED' },
       include: { follower: { select: { id: true, username: true, name: true, avatar: true } } }
     });
-    res.json(follows.map(f => f.follower));
+    res.json({ private: false, users: follows.map(f => f.follower) });
   } catch (error) {
     res.status(500).json({ error: 'Server error.' });
   }
 });
 
-// Get following
+// Get following (with privacy check)
 router.get('/:userId/following', auth, async (req, res) => {
   try {
+    const targetUser = await prisma.user.findUnique({ where: { id: req.params.userId } });
+    if (!targetUser) return res.status(404).json({ error: 'User not found.' });
+
+    // Privacy check: if private account and not own profile, check if current user follows them
+    if (targetUser.accountType === 'PRIVATE' && req.params.userId !== req.user.id) {
+      const followRecord = await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: req.user.id, followingId: req.params.userId } }
+      });
+      if (!followRecord || followRecord.status !== 'ACCEPTED') {
+        return res.json({ private: true, users: [] });
+      }
+    }
+
     const follows = await prisma.follow.findMany({
       where: { followerId: req.params.userId, status: 'ACCEPTED' },
       include: { following: { select: { id: true, username: true, name: true, avatar: true } } }
     });
-    res.json(follows.map(f => f.following));
+    res.json({ private: false, users: follows.map(f => f.following) });
   } catch (error) {
     res.status(500).json({ error: 'Server error.' });
   }

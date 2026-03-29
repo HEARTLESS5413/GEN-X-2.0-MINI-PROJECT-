@@ -1,8 +1,33 @@
 function chatHandler(io, socket, prisma, onlineUsers) {
+  // Helper: check if two users mutually follow each other
+  async function areMutualFollowers(userId1, userId2) {
+    const [follow1, follow2] = await Promise.all([
+      prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: userId1, followingId: userId2 } }
+      }),
+      prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: userId2, followingId: userId1 } }
+      }),
+    ]);
+    return (follow1?.status === 'ACCEPTED') && (follow2?.status === 'ACCEPTED');
+  }
+
   // Send message
   socket.on('sendMessage', async (data) => {
     try {
       const { receiverId, content, vanishing } = data;
+
+      // Check mutual follow or existing accepted conversation
+      const mutual = await areMutualFollowers(socket.userId, receiverId);
+      const hasAcceptedMessages = await prisma.message.count({
+        where: {
+          OR: [
+            { senderId: socket.userId, receiverId, accepted: true },
+            { senderId: receiverId, receiverId: socket.userId, accepted: true }
+          ]
+        }
+      });
+      const isAccepted = mutual || hasAcceptedMessages > 0;
       
       const message = await prisma.message.create({
         data: {
@@ -10,13 +35,19 @@ function chatHandler(io, socket, prisma, onlineUsers) {
           receiverId,
           content: content || '',
           vanishing: vanishing || false,
+          accepted: isAccepted,
         }
       });
 
-      // Send to receiver
-      io.to(`user:${receiverId}`).emit('newMessage', message);
-      // Send back to sender for confirmation
-      socket.emit('messageSent', message);
+      if (isAccepted) {
+        // Normal message flow
+        io.to(`user:${receiverId}`).emit('newMessage', message);
+        socket.emit('messageSent', message);
+      } else {
+        // Message request flow
+        io.to(`user:${receiverId}`).emit('newMessageRequest', message);
+        socket.emit('messageSent', { ...message, isPending: true });
+      }
     } catch (error) {
       console.error('Send message error:', error);
       socket.emit('error', { message: 'Failed to send message' });

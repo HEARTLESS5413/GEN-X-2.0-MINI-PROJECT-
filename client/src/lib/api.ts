@@ -53,6 +53,7 @@ export const usersAPI = {
   follow: (userId: string) => api.post(`/users/follow/${userId}`),
   handleFollowRequest: (followId: string, action: string) =>
     api.post(`/users/follow-request/${followId}/${action}`),
+  getFollowRequests: () => api.get('/users/follow-requests'),
   getFollowers: (userId: string) => api.get(`/users/${userId}/followers`),
   getFollowing: (userId: string) => api.get(`/users/${userId}/following`),
   search: (q: string) => api.get(`/users/search?q=${q}`),
@@ -84,6 +85,8 @@ export const messagesAPI = {
   sendMedia: (userId: string, formData: FormData) => api.post(`/messages/${userId}/media`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  acceptRequest: (userId: string) => api.post(`/messages/${userId}/accept`),
+  declineRequest: (userId: string) => api.post(`/messages/${userId}/decline`),
 };
 
 // Notifications

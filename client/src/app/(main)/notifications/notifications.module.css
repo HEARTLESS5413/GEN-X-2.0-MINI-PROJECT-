@@ -1,5 +1,37 @@
 .notifPage { max-width: 600px; margin: 0 auto; padding: 24px; }
 .header { margin-bottom: 20px; }
+
+/* Tab Bar */
+.tabBar { display: flex; gap: 4px; margin-bottom: 20px; background: var(--bg-card); border-radius: var(--radius-md); padding: 4px; border: 1px solid var(--border-color); }
+.tabBtn { flex: 1; padding: 10px 16px; border: none; background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-secondary); }
+.tabBtn:hover { color: var(--text-primary); background: rgba(139, 92, 246, 0.05); }
+.tabActive { background: rgba(139, 92, 246, 0.15) !important; color: var(--accent-primary) !important; }
+.tabBadge { background: var(--gradient-primary); color: white; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 20px; min-width: 18px; text-align: center; }
+
+/* Follow Requests */
+.requestsSection { display: flex; flex-direction: column; gap: 2px; }
+.requestList { display: flex; flex-direction: column; gap: 8px; }
+.requestCard { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: all 0.25s; animation: fadeIn 0.35s ease both; }
+.requestCard:hover { border-color: var(--border-glow); box-shadow: 0 0 20px rgba(139, 92, 246, 0.06); }
+.requestUser { display: flex; align-items: center; gap: 12px; text-decoration: none; flex: 1; min-width: 0; }
+.requestAvatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); flex-shrink: 0; }
+.requestAvatarFallback { width: 48px; height: 48px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 18px; flex-shrink: 0; }
+.requestInfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.requestName { font-size: 14px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.requestUsername { font-size: 12px; color: var(--text-muted); font-family: var(--font-secondary); }
+.requestBio { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.requestActions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.actionBtn { padding: 7px 16px; border: none; border-radius: var(--radius-sm); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: var(--font-secondary); }
+.acceptBtn { background: var(--gradient-primary); color: white; }
+.acceptBtn:hover { transform: scale(1.03); box-shadow: 0 0 12px rgba(139, 92, 246, 0.3); }
+.declineBtn { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid var(--border-color); }
+.declineBtn:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+.followBackBtn { background: linear-gradient(135deg, #06b6d4, #8b5cf6); color: white; }
+.followBackBtn:hover { transform: scale(1.03); box-shadow: 0 0 12px rgba(6, 182, 212, 0.3); }
+.followingBtn { background: rgba(16, 185, 129, 0.15); color: #10b981; cursor: default; }
+.acceptedLabel { font-size: 12px; color: #10b981; font-weight: 600; }
+
+/* Activity Notifications */
 .notifList { display: flex; flex-direction: column; gap: 2px; }
 .notifItem { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); transition: all 0.2s; animation: fadeIn 0.3s ease both; }
 .notifItem:hover { border-color: var(--border-glow); }
@@ -14,4 +46,12 @@
 .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
 .empty h3 { font-size: 18px; color: var(--text-secondary); margin: 12px 0 4px; }
 .empty p { font-size: 14px; }
-@media (max-width: 768px) { .notifPage { padding: 12px; } }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 768px) {
+  .notifPage { padding: 12px; }
+  .requestCard { flex-direction: column; align-items: stretch; gap: 12px; }
+  .requestActions { justify-content: flex-start; }
+  .requestBio { display: none; }
+}

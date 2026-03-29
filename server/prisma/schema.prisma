@@ -241,6 +241,7 @@ model Message {
   mediaType  MediaType?
   seen       Boolean  @default(false)
   vanishing  Boolean  @default(false)
+  accepted   Boolean  @default(true)
   deletedAt  DateTime?
   createdAt  DateTime @default(now())
 
