@@ -410,15 +410,31 @@ export default function MessagesPage() {
             {/* Messages */}
             <div className={styles.messagesArea}>
               {/* Pending Message Request Banner */}
-              {!chatIsAccepted && (
-                <div className={styles.pendingBanner}>
-                  <div className={styles.pendingBannerIcon}>📩</div>
-                  <p><strong>{chatUser?.username}</strong> wants to send you a message</p>
-                  <div className={styles.pendingBannerActions}>
-                    <button className={styles.pendingAccept} onClick={handleAcceptMessageRequest}>Accept</button>
-                    <button className={styles.pendingDecline} onClick={handleDeclineMessageRequest}>Decline</button>
-                  </div>
-                </div>
+              {!chatIsAccepted && messages.length > 0 && (
+                (() => {
+                  // Determine who initiated the pending chat by looking at who sent the messages.
+                  const theySentMessages = messages.some(m => m.senderId !== user?.id);
+                  
+                  if (theySentMessages) {
+                    return (
+                      <div className={styles.pendingBanner}>
+                        <div className={styles.pendingBannerIcon}>📩</div>
+                        <p><strong>{chatUser?.username}</strong> wants to send you a message</p>
+                        <div className={styles.pendingBannerActions}>
+                          <button className={styles.pendingAccept} onClick={handleAcceptMessageRequest}>Accept</button>
+                          <button className={styles.pendingDecline} onClick={handleDeclineMessageRequest}>Decline</button>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className={styles.pendingBanner} style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)' }}>
+                        <div className={styles.pendingBannerIcon} style={{ fontSize: 20 }}>⏳</div>
+                        <p>Waiting for <strong>{chatUser?.username}</strong> to accept your message request.</p>
+                      </div>
+                    );
+                  }
+                })()
               )}
             {messages.map(msg => {
               if (isGameInvite(msg.content)) {
