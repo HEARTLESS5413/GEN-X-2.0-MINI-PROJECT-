@@ -174,12 +174,14 @@ export default function CallProvider() {
 
   // =========== SOUND SYSTEM ===========
   const ringCtxRef = useRef<AudioContext | null>(null);
+  const ringOscRef = useRef<OscillatorNode | null>(null);
   const ringIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const outCtxRef = useRef<AudioContext | null>(null);
+  const outOscRef = useRef<OscillatorNode | null>(null);
   const outIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const playRingtone = () => {
-    stopAllSounds(); // always clean up first
+    stopAllSounds(); // wipe slate clean
     try {
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
@@ -189,23 +191,28 @@ export default function CallProvider() {
       osc.frequency.value = 440;
       osc.type = 'sine';
       gain.gain.value = 0;
-      osc.start();
+      osc.start(0);
+
       const ring = () => {
         try {
-          gain.gain.setValueAtTime(0.3, ctx.currentTime);
-          gain.gain.setValueAtTime(0, ctx.currentTime + 0.4);
-          gain.gain.setValueAtTime(0.3, ctx.currentTime + 0.5);
-          gain.gain.setValueAtTime(0, ctx.currentTime + 0.9);
+          if (ctx.state !== 'closed') {
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.setValueAtTime(0, ctx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0, ctx.currentTime + 0.9);
+          }
         } catch {}
       };
+      
       ring();
       ringCtxRef.current = ctx;
+      ringOscRef.current = osc;
       ringIntervalRef.current = setInterval(ring, 2000);
-    } catch {}
+    } catch (e) { console.error('Ringtone init err', e); }
   };
 
   const playOutgoingTone = () => {
-    stopAllSounds(); // always clean up first
+    stopAllSounds(); // wipe slate clean
     try {
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
@@ -215,27 +222,52 @@ export default function CallProvider() {
       osc.frequency.value = 480;
       osc.type = 'sine';
       gain.gain.value = 0;
-      osc.start();
+      osc.start(0);
+
       const pattern = () => {
         try {
-          gain.gain.setValueAtTime(0.15, ctx.currentTime);
-          gain.gain.setValueAtTime(0, ctx.currentTime + 1);
+          if (ctx.state !== 'closed') {
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.setValueAtTime(0, ctx.currentTime + 1);
+          }
         } catch {}
       };
+      
       pattern();
       outCtxRef.current = ctx;
+      outOscRef.current = osc;
       outIntervalRef.current = setInterval(pattern, 3000);
-    } catch {}
+    } catch (e) { console.error('Outgoing tone init err', e); }
   };
 
   const stopAllSounds = () => {
-    // Stop ringtone
-    if (ringIntervalRef.current) { clearInterval(ringIntervalRef.current); ringIntervalRef.current = null; }
-    if (ringCtxRef.current) { try { ringCtxRef.current.close(); } catch {} ringCtxRef.current = null; }
-    // Stop outgoing tone
-    if (outIntervalRef.current) { clearInterval(outIntervalRef.current); outIntervalRef.current = null; }
-    if (outCtxRef.current) { try { outCtxRef.current.close(); } catch {} outCtxRef.current = null; }
-    // Legacy refs cleanup
+    // 1. Force stop oscillators
+    try { ringOscRef.current?.stop(); } catch {}
+    try { ringOscRef.current?.disconnect(); } catch {}
+    try { outOscRef.current?.stop(); } catch {}
+    try { outOscRef.current?.disconnect(); } catch {}
+    
+    // 2. Clear intervals
+    if (ringIntervalRef.current) clearInterval(ringIntervalRef.current);
+    if (outIntervalRef.current) clearInterval(outIntervalRef.current);
+    
+    // 3. Suspend & Close contexts forcefully
+    if (ringCtxRef.current) {
+      try { ringCtxRef.current.suspend(); ringCtxRef.current.close(); } catch {}
+    }
+    if (outCtxRef.current) {
+      try { outCtxRef.current.suspend(); outCtxRef.current.close(); } catch {}
+    }
+    
+    // 4. Nullify refs
+    ringOscRef.current = null;
+    outOscRef.current = null;
+    ringIntervalRef.current = null;
+    outIntervalRef.current = null;
+    ringCtxRef.current = null;
+    outCtxRef.current = null;
+
+    // Legacy fallback cleanup
     try { (ringtoneRef.current as any)?.stop?.(); } catch {}
     try { (outgoingToneRef.current as any)?.stop?.(); } catch {}
     ringtoneRef.current = null;
