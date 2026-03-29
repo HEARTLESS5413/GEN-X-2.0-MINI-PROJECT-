@@ -173,13 +173,14 @@ export default function CallProvider() {
   }, []);
 
   // =========== SOUND SYSTEM ===========
+  const ringCtxRef = useRef<AudioContext | null>(null);
+  const ringIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const outCtxRef = useRef<AudioContext | null>(null);
+  const outIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const playRingtone = () => {
+    stopAllSounds(); // always clean up first
     try {
-      if (!ringtoneRef.current) {
-        const audio = new Audio('data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YRAAAAB/f39/f39/f39/f39/fw==');
-        ringtoneRef.current = audio;
-      }
-      // Use oscillator for ringtone
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -187,22 +188,24 @@ export default function CallProvider() {
       gain.connect(ctx.destination);
       osc.frequency.value = 440;
       osc.type = 'sine';
-      gain.gain.value = 0.3;
+      gain.gain.value = 0;
       osc.start();
-      // Ring pattern
       const ring = () => {
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.setValueAtTime(0, ctx.currentTime + 0.4);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime + 0.5);
-        gain.gain.setValueAtTime(0, ctx.currentTime + 0.9);
+        try {
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.setValueAtTime(0, ctx.currentTime + 0.4);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime + 0.5);
+          gain.gain.setValueAtTime(0, ctx.currentTime + 0.9);
+        } catch {}
       };
       ring();
-      const intervalId = setInterval(ring, 2000);
-      ringtoneRef.current = { stop: () => { osc.stop(); clearInterval(intervalId); ctx.close(); } } as any;
+      ringCtxRef.current = ctx;
+      ringIntervalRef.current = setInterval(ring, 2000);
     } catch {}
   };
 
   const playOutgoingTone = () => {
+    stopAllSounds(); // always clean up first
     try {
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
@@ -211,19 +214,28 @@ export default function CallProvider() {
       gain.connect(ctx.destination);
       osc.frequency.value = 480;
       osc.type = 'sine';
-      gain.gain.value = 0.15;
+      gain.gain.value = 0;
       osc.start();
       const pattern = () => {
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        gain.gain.setValueAtTime(0, ctx.currentTime + 1);
+        try {
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain.gain.setValueAtTime(0, ctx.currentTime + 1);
+        } catch {}
       };
       pattern();
-      const intervalId = setInterval(pattern, 3000);
-      outgoingToneRef.current = { stop: () => { osc.stop(); clearInterval(intervalId); ctx.close(); } } as any;
+      outCtxRef.current = ctx;
+      outIntervalRef.current = setInterval(pattern, 3000);
     } catch {}
   };
 
   const stopAllSounds = () => {
+    // Stop ringtone
+    if (ringIntervalRef.current) { clearInterval(ringIntervalRef.current); ringIntervalRef.current = null; }
+    if (ringCtxRef.current) { try { ringCtxRef.current.close(); } catch {} ringCtxRef.current = null; }
+    // Stop outgoing tone
+    if (outIntervalRef.current) { clearInterval(outIntervalRef.current); outIntervalRef.current = null; }
+    if (outCtxRef.current) { try { outCtxRef.current.close(); } catch {} outCtxRef.current = null; }
+    // Legacy refs cleanup
     try { (ringtoneRef.current as any)?.stop?.(); } catch {}
     try { (outgoingToneRef.current as any)?.stop?.(); } catch {}
     ringtoneRef.current = null;
