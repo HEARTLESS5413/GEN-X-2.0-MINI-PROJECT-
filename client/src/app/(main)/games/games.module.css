@@ -1,0 +1,40 @@
+.gamesPage { max-width: 700px; margin: 0 auto; padding: 24px; }
+
+.section { margin-bottom: 32px; }
+.sectionTitle { font-size: 18px; font-weight: 700; margin-bottom: 14px; }
+
+/* Game Grid */
+.gameGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.gameCard { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px 16px; text-align: center; transition: all 0.3s; }
+.gameCard:hover { border-color: var(--border-glow); box-shadow: var(--shadow-glow); transform: translateY(-3px); }
+.gameCard h3 { font-size: 15px; font-weight: 700; margin: 12px 0 4px; }
+.gameCard p { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.gameIcon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto; }
+.gameTip { font-size: 11px; color: var(--text-muted); opacity: 0.6; }
+
+/* Active Games */
+.activeList { display: flex; flex-direction: column; gap: 8px; }
+.activeItem { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; }
+.activeItem:hover { border-color: var(--accent-primary); background: var(--bg-hover); }
+.activeIcon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.activeInfo { flex: 1; display: flex; flex-direction: column; }
+.activeInfo strong { font-size: 14px; }
+.activeInfo span { font-size: 12px; color: var(--text-muted); }
+
+/* History */
+.historyItem { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin-bottom: 6px; }
+.historyIcon { font-size: 20px; }
+.historyInfo { flex: 1; }
+.historyInfo span { display: block; font-size: 14px; font-weight: 600; }
+.historyResult { font-size: 12px !important; color: var(--text-muted); font-weight: 400 !important; }
+.historyBadge { font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+.badgeWin { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+.badgeLoss { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
+.badgeDraw { background: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+
+/* Invite User */
+.inviteUser { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+.inviteUser:hover { background: var(--bg-hover); }
+.avatarFallback { width: 32px; height: 32px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 13px; flex-shrink: 0; }
+
+@media (max-width: 768px) { .gamesPage { padding: 12px; } .gameGrid { grid-template-columns: repeat(2, 1fr); } }

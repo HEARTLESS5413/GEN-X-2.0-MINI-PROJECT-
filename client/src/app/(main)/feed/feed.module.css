@@ -1,0 +1,292 @@
+.feedPage {
+  display: flex;
+  gap: 30px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.feedColumn {
+  flex: 1;
+  max-width: 580px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Create Section */
+.createSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.createSection:hover {
+  border-color: var(--border-glow);
+  box-shadow: var(--shadow-glow);
+}
+.createPlaceholder {
+  flex: 1;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.avatarFallback {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* Post Card */
+.postCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: fadeIn 0.4s ease-out both;
+  transition: border-color 0.3s;
+}
+.postCard:hover {
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.postHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.postUser {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.postUsername {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  display: block;
+}
+
+.postTime {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.postCaption {
+  padding: 0 16px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-family: var(--font-secondary);
+  white-space: pre-wrap;
+}
+
+.postMedia {
+  width: 100%;
+  max-height: 500px;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.mediaContent {
+  width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Actions */
+.postActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+}
+
+.actionGroup {
+  display: flex;
+  gap: 4px;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+  font-family: var(--font-secondary);
+}
+.actionBtn:hover {
+  background: var(--bg-hover);
+}
+.actionBtn span {
+  font-size: 13px;
+}
+.liked { color: #ef4444; }
+.saved { color: var(--accent-primary); }
+
+/* Comments */
+.commentsSection {
+  padding: 0 16px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease;
+}
+
+.comment {
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-family: var(--font-secondary);
+  line-height: 1.4;
+}
+
+.commentUser {
+  color: var(--text-primary);
+  text-decoration: none;
+  margin-right: 6px;
+}
+.commentUser strong {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.addComment {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px 12px;
+  align-items: center;
+}
+.addComment .input {
+  padding: 8px 12px;
+}
+
+/* Media Preview in Modal */
+.mediaPreview {
+  position: relative;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.removeMedia {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Right Panel */
+.rightPanel {
+  width: 300px;
+  position: sticky;
+  top: 24px;
+  height: fit-content;
+}
+
+.suggestionsCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.suggestionsTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.suggestionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.suggestionUser {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+  min-width: 0;
+}
+
+.suggestionName {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  display: block;
+}
+
+.suggestionBio {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+.emptyState h3 {
+  margin: 12px 0 6px;
+  color: var(--text-secondary);
+  font-size: 18px;
+}
+.emptyState p {
+  font-size: 14px;
+}
+
+@media (max-width: 1024px) {
+  .rightPanel { display: none; }
+}
+
+@media (max-width: 768px) {
+  .feedPage { padding: 12px; }
+  .feedColumn { max-width: 100%; }
+}

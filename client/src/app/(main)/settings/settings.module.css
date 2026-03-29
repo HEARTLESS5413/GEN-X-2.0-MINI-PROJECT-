@@ -1,0 +1,30 @@
+.settingsPage { max-width: 640px; margin: 0 auto; padding: 24px; }
+.section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+.sectionTitle { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.sectionDesc { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+
+.themeGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.themeCard { background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: var(--radius-sm); padding: 20px 16px; text-align: center; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.themeCard:hover { border-color: var(--border-glow); transform: translateY(-2px); }
+.themeActive { border-color: var(--accent-primary); background: rgba(139, 92, 246, 0.08); box-shadow: var(--shadow-glow); }
+.themePreview { display: flex; gap: 6px; margin-bottom: 4px; }
+.colorDot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); }
+.themeName { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+.themeDesc { font-size: 11px; color: var(--text-muted); }
+.activeLabel { font-size: 11px; color: var(--accent-success); font-weight: 600; margin-top: 4px; }
+
+.privacyOptions { display: flex; flex-direction: column; gap: 10px; }
+.privacyBtn { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.3s; text-align: left; color: var(--text-primary); font-family: var(--font-primary); }
+.privacyBtn:hover { border-color: var(--border-glow); }
+.privacyActive { border-color: var(--accent-primary); background: rgba(139, 92, 246, 0.08); }
+.privacyBtn strong { display: block; font-size: 14px; margin-bottom: 2px; }
+.privacyBtn span { font-size: 12px; color: var(--text-muted); }
+.privacyIcon { font-size: 24px; }
+.savedMsg { color: var(--accent-success); font-size: 13px; margin-top: 12px; font-weight: 500; }
+
+.infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.infoItem { background: var(--bg-tertiary); padding: 14px 16px; border-radius: var(--radius-sm); }
+.infoLabel { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
+.infoValue { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+
+@media (max-width: 768px) { .settingsPage { padding: 12px; } .themeGrid { grid-template-columns: 1fr; } .infoGrid { grid-template-columns: 1fr; } }

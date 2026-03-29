@@ -1,0 +1,270 @@
+/* ===== Stories Bar ===== */
+.storiesBar {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.storiesScroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.storiesScroll::-webkit-scrollbar { display: none; }
+
+.storyItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  min-width: 68px;
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+}
+
+.storyRing {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.2s;
+}
+.storyItem:hover .storyRing { transform: scale(1.08); }
+
+.unviewedRing {
+  background: var(--gradient-primary);
+}
+
+.viewedRing {
+  background: var(--border-color);
+}
+
+.addRing {
+  background: var(--bg-tertiary);
+  border: 2px dashed var(--border-color);
+}
+
+.storyAvatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--bg-primary);
+}
+
+.storyAvatarFallback {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--gradient-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: white;
+  border: 3px solid var(--bg-primary);
+}
+
+.addIcon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: var(--gradient-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  border: 2px solid var(--bg-primary);
+}
+
+.storyName {
+  font-size: 11px;
+  color: var(--text-secondary);
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== Full-Screen Viewer ===== */
+.viewer {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.viewerContent {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: 90vh;
+  max-height: 780px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+}
+
+.progressBars {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 10;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: white;
+  border-radius: 3px;
+  transition: width 50ms linear;
+}
+
+.viewerHeader {
+  position: absolute;
+  top: 18px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
+}
+
+.viewerAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+}
+
+.viewerAvatarFallback {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  font-size: 14px;
+}
+
+.viewerHeader strong {
+  color: white;
+  font-size: 14px;
+}
+
+.viewerTime {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 8px;
+}
+
+.closeBtn {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.closeBtn:hover { background: rgba(255, 255, 255, 0.3); }
+
+.viewerMedia {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.mediaContent {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.captionOverlay {
+  position: absolute;
+  bottom: 60px;
+  left: 16px;
+  right: 16px;
+  color: white;
+  font-size: 15px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  text-align: center;
+  padding: 8px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+}
+
+.tapAreas {
+  position: absolute;
+  inset: 60px 0 60px 0;
+  display: flex;
+}
+
+.tapLeft, .tapRight {
+  flex: 1;
+  cursor: pointer;
+}
+
+.viewCount {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+}
+
+@media (max-width: 768px) {
+  .viewerContent { max-width: 100%; height: 100vh; max-height: none; border-radius: 0; }
+}
