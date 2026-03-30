@@ -48,8 +48,15 @@ export default function GameRoomPage() {
       setSession((prev: any) => prev ? { ...prev, state: data.state, status: data.status, winnerId: data.winnerId } : prev);
       if (data.status === 'ACTIVE') setIsQueueing(false);
     });
-    socket.on('matchFound', (data: { sessionId: string }) => {
-      router.push(`/games/${data.sessionId}`);
+    socket.on('matchFound', (data: any) => {
+      setIsQueueing(false);
+      if (data.sessionId === sessionId) {
+        // P1: we're already on this page, just update the full session
+        if (data.session) setSession(data.session);
+      } else {
+        // P2: redirect to P1's session
+        router.push(`/games/${data.sessionId}`);
+      }
     });
     socket.on('queueStatus', (data: { isQueueing: boolean }) => {
       setIsQueueing(data.isQueueing);
@@ -125,11 +132,13 @@ export default function GameRoomPage() {
   const fetchFriends = async () => {
     if (!user?.id) return;
     try {
-      const [{ data: followers }, { data: following }] = await Promise.all([
+      const [{ data: followersData }, { data: followingData }] = await Promise.all([
         usersAPI.getFollowers(user.id),
         usersAPI.getFollowing(user.id)
       ]);
-      const uniqueFriends = Array.from(new Map([...followers, ...following].map((item: any) => [item.id, item])).values());
+      const followersList = followersData?.users || followersData || [];
+      const followingList = followingData?.users || followingData || [];
+      const uniqueFriends = Array.from(new Map([...followersList, ...followingList].map((item: any) => [item.id, item])).values());
       setFriendsList(uniqueFriends);
     } catch (e) {
       console.error('Failed to fetch friends', e);
@@ -174,8 +183,12 @@ export default function GameRoomPage() {
   const handleFollowOpponent = async () => {
     if (!profileData?.id) return;
     try {
-      await usersAPI.follow(profileData.id);
-      setProfileData((prev: any) => ({ ...prev, _count: { ...prev._count, followers: prev._count.followers + 1 }, isFollowing: true }));
+      const { data } = await usersAPI.follow(profileData.id);
+      if (data.action === 'requested') {
+        setProfileData((prev: any) => ({ ...prev, isPending: true }));
+      } else if (data.action === 'unfollowed') {
+        setProfileData((prev: any) => ({ ...prev, isFollowing: false, isPending: false, _count: { ...prev._count, followers: Math.max(0, prev._count.followers - 1) } }));
+      }
     } catch {}
   };
 
@@ -364,7 +377,7 @@ export default function GameRoomPage() {
                   <button onClick={() => setShowProfile(false)} style={{ background:'none', border:'none', fontSize:24, cursor:'pointer', color: 'var(--text-muted)' }}>×</button>
                 </div>
                 {profileData.avatar ? (
-                  <img src={`${UPLOADS_URL}${profileData.avatar}`} alt="" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 16px border: 4px solid var(--primary-color)' }} />
+                  <img src={`${UPLOADS_URL}${profileData.avatar}`} alt="" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 16px', border: '4px solid var(--primary-color)' }} />
                 ) : (
                   <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, fontWeight: 'bold', margin: '0 auto 16px' }}>
                     {profileData.username[0].toUpperCase()}
@@ -378,14 +391,19 @@ export default function GameRoomPage() {
                   <div><div style={{ fontWeight: 700, fontSize: 18 }}>{profileData._count?.following || 0}</div><div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Following</div></div>
                 </div>
 
-                {!profileData.isFollowing && user?.id !== profileData.id && (
+                {!profileData.isFollowing && !profileData.isPending && user?.id !== profileData.id && (
                   <button className="btn btn-primary" onClick={handleFollowOpponent} style={{ width: '100%', padding: '12px', borderRadius: 24, fontWeight: 600 }}>
                     Follow
                   </button>
                 )}
+                {profileData.isPending && (
+                  <button className="btn btn-secondary" disabled style={{ width: '100%', padding: '12px', borderRadius: 24 }}>
+                    Requested
+                  </button>
+                )}
                 {profileData.isFollowing && (
                   <button className="btn btn-secondary" disabled style={{ width: '100%', padding: '12px', borderRadius: 24 }}>
-                    Following
+                    Following ✓
                   </button>
                 )}
               </div>

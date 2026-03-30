@@ -35,24 +35,29 @@ function gameHandler(io, socket, prisma) {
       if (p1.userId === p2.userId) return; // Prevent self match
 
       try {
-        const initialState = (await prisma.gameSession.findUnique({where: {id:p1.sessionId}})).state;
+        const existingSession = await prisma.gameSession.findUnique({where: {id: p1.sessionId}});
+        if (!existingSession) return;
+
         const mergedSession = await prisma.gameSession.update({
           where: { id: p1.sessionId },
           data: {
             player2Id: p2.userId,
             status: 'ACTIVE',
-            state: { ...initialState, isRandomMatch: true }
+            state: { ...existingSession.state, isRandomMatch: true }
+          },
+          include: {
+            player1: { select: { id: true, username: true, name: true, avatar: true } },
+            player2: { select: { id: true, username: true, name: true, avatar: true } },
           }
         });
 
-        // Clean up P2's now abandoned WAITING session
+        // Clean up P2's abandoned WAITING session
         await prisma.gameSession.delete({ where: { id: p2.sessionId } }).catch(() => {});
 
-        // Emit to P1
-        io.to(`game:${p1.sessionId}`).emit('gameUpdate', { sessionId: p1.sessionId, state: mergedSession.state, status: 'ACTIVE', winnerId: null, gameType });
-        
-        // Emit to P2 to redirect them natively to P1's session URL room
-        io.to(p2.socketId).emit('matchFound', { sessionId: p1.sessionId });
+        // Emit matchFound to BOTH players with full session data
+        // P1 is in the game room already, P2 gets a direct emit
+        io.to(`game:${p1.sessionId}`).emit('matchFound', { sessionId: p1.sessionId, session: mergedSession });
+        io.to(p2.socketId).emit('matchFound', { sessionId: p1.sessionId, session: mergedSession });
       } catch (e) {
         console.error('Matchmaking error:', e);
       }
