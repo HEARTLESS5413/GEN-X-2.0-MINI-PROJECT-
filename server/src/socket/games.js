@@ -186,7 +186,7 @@ function gameHandler(io, socket, prisma) {
           state.rolled = false;
           state.dice = null;
           state.consecutiveSixes = 0;
-          state.currentTurn = isP1 ? session.player2Id : session.player1Id;
+          state.currentTurn = isP1 ? (session.player2Id || session.player1Id) : session.player1Id;
         }
       }
 
@@ -252,7 +252,7 @@ function gameHandler(io, socket, prisma) {
       state.dice = null;
       if (!extraTurn) {
         state.consecutiveSixes = 0;
-        state.currentTurn = isP1 ? session.player2Id : session.player1Id;
+        state.currentTurn = isP1 ? (session.player2Id || session.player1Id) : session.player1Id;
       }
 
       await prisma.gameSession.update({ where: { id: sessionId }, data: { state, status, winnerId } });

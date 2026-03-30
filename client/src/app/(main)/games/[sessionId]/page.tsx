@@ -603,7 +603,7 @@ function LudoGame({ session, user }: any) {
       <div className={styles.ludoHeader}>
         <div className={styles.p1Tag}>{session.player1?.username} {session.state.finished?.p1 >= 4 && '🏆'}</div>
         <div className={styles.turnText} style={{ margin: 0, fontSize: 18 }}>
-          {myTurn ? "🎲 Your turn!" : "⏳ Opponent waiting..."}
+          {myTurn ? "🎲 Your turn!" : "⏳ Opponent's turn"}
         </div>
         <div className={styles.p2Tag}>{session.player2?.username} {session.state.finished?.p2 >= 4 && '🏆'}</div>
       </div>
