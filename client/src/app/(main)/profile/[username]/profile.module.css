@@ -2,7 +2,7 @@
   position: relative;
   max-width: 900px;
   margin: 0 auto;
-  padding: 0 0 60px;
+  padding: 40px 0 60px;
   min-height: 100vh;
 }
 
@@ -10,64 +10,14 @@
 .profileHeader {
   position: relative;
   margin-bottom: 40px;
-  border-radius: 0 0 32px 32px;
-  background: rgba(255,255,255,0.02);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  padding-bottom: 30px;
-  overflow: visible;
-}
-
-.headerBg {
-  position: relative;
-  height: 220px;
-  border-radius: 0 0 32px 32px;
-  overflow: hidden;
-  background: var(--bg-card);
-}
-
-.bgOrbs {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-.orb1, .orb2, .orb3 {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.15;
-  animation: orbFloat 15s infinite ease-in-out;
-}
-.orb1 {
-  width: 400px; height: 400px;
-  background: #a78bfa;
-  top: -50px; left: -50px;
-}
-.orb2 {
-  width: 300px; height: 300px;
-  background: #ec4899;
-  bottom: -50px; right: -50px;
-  animation-delay: -5s;
-}
-.orb3 {
-  width: 250px; height: 250px;
-  background: #06b6d4;
-  top: 50%; left: 50%; translate: -50% -50%;
-  animation-delay: -10s;
-}
-@keyframes orbFloat {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -20px) scale(1.1); }
-  66% { transform: translate(-20px, 30px) scale(0.95); }
 }
 
 .headerContent {
   position: relative;
   z-index: 2;
   display: flex;
-  gap: 30px;
-  align-items: flex-end;
-  margin-top: -70px;
+  gap: 40px;
+  align-items: flex-start;
   padding: 0 40px;
 }
 
@@ -79,15 +29,15 @@
   position: relative;
   cursor: pointer;
   border-radius: 50%;
-  padding: 6px;
+  padding: 4px;
   background: var(--bg-primary);
 }
 
 .profileAvatar, .avatarLarge {
-  width: 140px;
-  height: 140px;
+  width: 150px;
+  height: 150px;
   border-radius: 50%;
-  border: 4px solid var(--bg-primary);
+  border: 2px solid rgba(255,255,255,0.1);
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   object-fit: cover;
 }
@@ -97,14 +47,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 56px;
+  font-size: 64px;
   font-weight: 800;
   color: white;
 }
 
 .avatarOverlay {
   position: absolute;
-  inset: 6px;
+  inset: 4px;
   border-radius: 50%;
   background: rgba(0,0,0,0.6);
   backdrop-filter: blur(4px);
@@ -120,10 +70,10 @@
 
 .onlineBadge {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 20px;
-  height: 20px;
+  bottom: 15px;
+  right: 15px;
+  width: 22px;
+  height: 22px;
   background: #22c55e;
   border-radius: 50%;
   border: 4px solid var(--bg-primary);
@@ -133,40 +83,34 @@
 /* ============== Info & Stats ============== */
 .profileInfo {
   flex: 1;
-  padding-bottom: 20px;
   display: flex;
   flex-direction: column;
 }
 
 .nameRow {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  align-items: center;
+  gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-
-.displayName {
-  font-size: 32px;
-  font-weight: 800;
-  margin: 0;
-  letter-spacing: -0.5px;
-  color: var(--text-primary);
+  margin-bottom: 24px;
 }
 
 .usernameTag {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
-  background: linear-gradient(135deg, #a78bfa, #ec4899);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
 }
 
 .privateBadge {
-  font-size: 16px;
+  font-size: 18px;
   opacity: 0.8;
-  filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));
+}
+
+.displayName {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--text-primary);
 }
 
 .bio {
@@ -174,110 +118,98 @@
   font-size: 15px;
   line-height: 1.6;
   max-width: 600px;
-  margin: 0 0 20px;
+  margin: 0 0 24px;
+  white-space: pre-wrap; /* Preserve line breaks properly */
 }
 
 .statsAndActions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 20px;
 }
 
 .stats {
   display: flex;
-  gap: 12px;
+  gap: 40px;
+  margin-bottom: 20px;
 }
 
 .stat {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 16px;
-  backdrop-filter: blur(12px);
-  transition: all 0.2s ease;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-primary);
 }
 
 .statClickable {
   cursor: pointer;
+  transition: opacity 0.2s;
 }
 .statClickable:hover {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(167, 139, 250, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  opacity: 0.7;
 }
 
 .stat strong {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .stat span {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
 }
 
 /* ============== Action Buttons ============== */
 .actionBtns {
   display: flex;
   gap: 12px;
+  margin-top: 16px;
 }
 
-.btnPrimary {
+.btnPrimary, .btnGhost {
+  flex: 1;
+  max-width: 200px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 10px 24px;
-  border-radius: 14px;
-  border: none;
-  background: linear-gradient(135deg, #a78bfa, #7c3aed);
-  color: white;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.3);
-}
-.btnPrimary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(167, 139, 250, 0.45);
-}
-
-.btnGhost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 24px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.04);
-  color: var(--text-primary);
+  border-radius: 8px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  backdrop-filter: blur(8px);
+}
+
+.btnPrimary {
+  border: none;
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  color: white;
+  box-shadow: 0 4px 15px rgba(167, 139, 250, 0.25);
+}
+.btnPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(167, 139, 250, 0.4);
+}
+
+.btnGhost {
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary);
 }
 .btnGhost:hover {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(167, 139, 250, 0.4);
+  background: rgba(255,255,255,0.1);
 }
 
 /* ============== Tabs ============== */
 .tabs {
   display: flex;
   gap: 12px;
+  margin-top: 40px;
   margin-bottom: 24px;
   padding: 0 40px;
   justify-content: center;
@@ -312,7 +244,7 @@
 .postsGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 4px;
   padding: 0 40px;
 }
 
@@ -320,10 +252,9 @@
   position: relative;
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 4px;
   cursor: pointer;
   background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
 }
 
 .gridMedia {
@@ -334,7 +265,7 @@
 }
 
 .gridItem:hover .gridMedia {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .textPost {
@@ -352,6 +283,7 @@
   color: var(--text-primary);
   display: -webkit-box;
   -webkit-line-clamp: 6;
+  line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -359,14 +291,13 @@
 .gridOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 20px;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
 .gridItem:hover .gridOverlay {
@@ -389,11 +320,11 @@
   color: var(--text-muted);
   font-size: 16px;
   background: rgba(255,255,255,0.02);
-  border-radius: 20px;
+  border-radius: 8px;
   border: 1px dashed rgba(255,255,255,0.1);
 }
 
-/* ============== Modals ============== */
+/* ============== Modals (Re-used existing styles) ============== */
 .userListModal {
   background: var(--bg-card);
   width: 90%;
@@ -531,18 +462,15 @@
   .profilePage { padding-bottom: 80px; }
   .headerContent {
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    margin-top: -60px;
-    padding: 0 20px;
+    align-items: flex-start;
+    padding: 0 24px;
+    gap: 24px;
   }
-  .avatarLarge, .profileAvatar { width: 110px; height: 110px; }
-  .nameRow { justify-content: center; }
-  .statsAndActions { flex-direction: column; gap: 24px; padding-bottom: 10px; }
-  .stats { justify-content: center; width: 100%; }
-  .actionBtns { width: 100%; justify-content: center; }
-  .actionBtns button, .actionBtns a { flex: 1; max-width: 200px; }
+  .avatarLarge, .profileAvatar { width: 90px; height: 90px; }
+  .nameRow { margin-bottom: 16px; }
+  .stats { gap: 20px; margin-bottom: 24px; }
+  .actionBtns button, .actionBtns a { max-width: 100%; }
   .tabs { padding: 0 20px; }
   .postsGrid { padding: 0 10px; gap: 4px; }
-  .gridItem { border-radius: 8px; }
+  .gridItem { border-radius: 4px; }
 }

@@ -183,15 +183,6 @@ export default function ProfilePage() {
     <div className={styles.profilePage}>
       {/* Profile Header section */}
       <div className={styles.profileHeader}>
-        {/* Animated background area */}
-        <div className={styles.headerBg}>
-          <div className={styles.bgOrbs}>
-            <div className={styles.orb1}></div>
-            <div className={styles.orb2}></div>
-            <div className={styles.orb3}></div>
-          </div>
-        </div>
-
         <div className={styles.headerContent}>
           {/* Avatar Area */}
           <div className={styles.avatarSection}>
@@ -214,49 +205,42 @@ export default function ProfilePage() {
           {/* Info & Stats */}
           <div className={styles.profileInfo}>
             <div className={styles.nameRow}>
-              <h1 className={styles.displayName}>{profile.name}</h1>
-              <span className={styles.usernameTag}>@{profile.username}</span>
+              <span className={styles.usernameTag}>{profile.username}</span>
               {profile.accountType === 'PRIVATE' && <span className={styles.privateBadge} title="Private Account">🔒</span>}
-            </div>
-            {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
-            
-            <div className={styles.statsAndActions}>
-              {/* Glassmorphic Stats */}
-              <div className={styles.stats}>
-                <div className={styles.stat}>
-                  <strong>{profile._count.posts}</strong><span>Posts</span>
-                </div>
-                <div className={`${styles.stat} ${styles.statClickable}`} onClick={openFollowersModal}>
-                  <strong>{profile._count.followers}</strong><span>Followers</span>
-                </div>
-                <div className={`${styles.stat} ${styles.statClickable}`} onClick={openFollowingModal}>
-                  <strong>{profile._count.following}</strong><span>Following</span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className={styles.actionBtns}>
-                {profile.isOwnProfile ? (
-                  <button className={styles.btnGhost} onClick={() => setEditing(true)}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                    Edit Profile
+              {profile.isOwnProfile ? (
+                 <button className={styles.btnGhost} style={{ padding: '6px 14px', marginLeft: 16 }} onClick={() => setEditing(true)}>
+                   Edit profile
+                 </button>
+              ) : (
+                <div style={{ marginLeft: 16, display: 'flex', gap: 8 }}>
+                  <button
+                    className={profile.isFollowing || profile.isPending ? styles.btnGhost : styles.btnPrimary}
+                    onClick={handleFollow}
+                    style={{ padding: '6px 14px' }}
+                  >
+                    {profile.isFollowing ? 'Following' : profile.isPending ? 'Requested' : 'Follow'}
                   </button>
-                ) : (
-                  <>
-                    <button
-                      className={profile.isFollowing || profile.isPending ? styles.btnGhost : styles.btnPrimary}
-                      onClick={handleFollow}
-                    >
-                      {profile.isFollowing ? 'Following' : profile.isPending ? 'Requested' : 'Follow'}
-                    </button>
-                    <Link href={`/messages/${profile.id}`} className={styles.btnGhost}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                      Message
-                    </Link>
-                  </>
-                )}
+                  <Link href={`/messages/${profile.id}`} className={styles.btnGhost} style={{ padding: '6px 14px' }}>
+                    Message
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.stats}>
+              <div className={styles.stat}>
+                <strong>{profile._count.posts}</strong><span>posts</span>
+              </div>
+              <div className={`${styles.stat} ${styles.statClickable}`} onClick={openFollowersModal}>
+                <strong>{profile._count.followers}</strong><span>followers</span>
+              </div>
+              <div className={`${styles.stat} ${styles.statClickable}`} onClick={openFollowingModal}>
+                <strong>{profile._count.following}</strong><span>following</span>
               </div>
             </div>
+
+            <h1 className={styles.displayName}>{profile.name}</h1>
+            {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
           </div>
         </div>
       </div>
