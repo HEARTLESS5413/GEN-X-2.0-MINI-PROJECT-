@@ -1,30 +1,538 @@
-.watchPage { max-width: 800px; margin: 0 auto; padding: 24px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-
-/* Empty State */
-.emptyState { text-align: center; padding: 80px 20px; }
-.emptyState h2 { font-size: 24px; font-weight: 800; margin: 16px 0 8px; color: var(--text-primary); }
-.emptyState p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
-
-/* Created Panel */
-.createdPanel { display: flex; justify-content: center; padding: 60px 20px; }
-.createdCard {
-  text-align: center;
-  background: var(--bg-card);
-  border-radius: 24px;
-  padding: 40px;
-  max-width: 500px;
-  width: 100%;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+.watchPage {
+  position: relative;
+  min-height: calc(100vh - 70px);
+  padding: 28px;
+  overflow: hidden;
 }
-.createdCard h2 { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
-.createdActions {
+
+/* ============== Animated Background Orbs ============== */
+.bgOrbs {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.orb1, .orb2, .orb3 {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.12;
+  animation: orbFloat 20s infinite ease-in-out;
+}
+.orb1 {
+  width: 500px; height: 500px;
+  background: #a78bfa;
+  top: -100px; left: -100px;
+}
+.orb2 {
+  width: 400px; height: 400px;
+  background: #ec4899;
+  bottom: -50px; right: -100px;
+  animation-delay: -7s;
+}
+.orb3 {
+  width: 300px; height: 300px;
+  background: #06b6d4;
+  top: 50%; left: 50%;
+  animation-delay: -14s;
+}
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(40px, -30px) scale(1.1); }
+  50% { transform: translate(-20px, 40px) scale(0.9); }
+  75% { transform: translate(30px, 20px) scale(1.05); }
+}
+
+/* ============== Header ============== */
+.header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.headerIcon {
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(167, 139, 250, 0.12);
+  border-radius: 14px;
+  border: 1px solid rgba(167, 139, 250, 0.2);
+}
+.title {
+  font-size: 26px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #a78bfa, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+.subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+.headerActions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ============== Buttons ============== */
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.3);
+}
+.btnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(167, 139, 250, 0.45);
+}
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(8px);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btnGhost:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(167, 139, 250, 0.4);
+  transform: translateY(-1px);
+}
+
+/* ============== Hero Section ============== */
+.heroSection {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+.heroCard {
+  text-align: center;
+  max-width: 560px;
+  padding: 48px 40px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 28px;
+  backdrop-filter: blur(20px);
+}
+.heroVisual {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.screenMock {
+  width: 200px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.screenTop {
+  display: flex;
+  gap: 5px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.05);
+}
+.screenTop span {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+}
+.screenTop span:first-child { background: #ef4444; }
+.screenTop span:nth-child(2) { background: #eab308; }
+.screenTop span:last-child { background: #22c55e; }
+.screenBody {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+}
+.avatarStack {
+  display: flex;
+  margin-top: -12px;
+}
+.stackAvatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  border: 2px solid var(--bg-primary);
+  margin-left: -8px;
+}
+.stackAvatar:first-child { margin-left: 0; }
+
+.heroTitle {
+  font-size: 30px;
+  font-weight: 800;
+  margin: 0 0 12px;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+}
+.heroTitle span {
+  background: linear-gradient(135deg, #a78bfa, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.heroDesc {
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+.heroFeatures {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.featureTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  color: #a78bfa;
+  font-size: 12px;
+  font-weight: 600;
+}
+.heroBtns {
   display: flex;
   gap: 12px;
+  justify-content: center;
   flex-wrap: wrap;
 }
 
-@media (max-width: 768px) {
-  .watchPage { padding: 12px; }
+/* ============== Created Panel ============== */
+.createdPanel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+.createdCard {
+  text-align: center;
+  padding: 48px 40px;
+  max-width: 560px;
+  width: 100%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 28px;
+  backdrop-filter: blur(20px);
+}
+.successIcon {
+  margin-bottom: 16px;
+  animation: scaleIn 0.5s ease;
+}
+@keyframes scaleIn {
+  0% { opacity: 0; transform: scale(0.5); }
+  60% { transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.createdTitle {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  color: var(--text-primary);
+}
+.createdSub {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 28px;
+}
+.createdActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.actionCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 28px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: all 0.25s;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 13px;
+  min-width: 120px;
+}
+.actionCard:hover {
+  background: rgba(255,255,255,0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+.actionIcon {
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ============== Empty State ============== */
+.emptyState {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 80px 20px;
+}
+
+/* ============== Modal ============== */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modalCard {
+  width: 90%;
+  max-width: 440px;
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.modalIcon {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(167,139,250,0.12);
+  border-radius: 10px;
+}
+.modalHeader h3 {
+  flex: 1;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+.modalClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+.modalClose:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--text-primary);
+}
+.modalBody {
+  padding: 20px 24px;
+}
+.inputLabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  transition: border-color 0.2s;
+}
+.inputWrapper:focus-within {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167,139,250,0.15);
+}
+.inputField {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.inputField::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+.inputHint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 8px 0 0;
+  opacity: 0.7;
+}
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============== Friends List ============== */
+.friendList {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.friendItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: 0.2s;
+}
+.friendItem:hover {
+  background: rgba(255,255,255,0.07);
+}
+.friendInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.friendAvatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.friendAvatarFb {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a78bfa, #ec4899);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.friendName {
+  font-weight: 600;
+  font-size: 14px;
+}
+.btnInvite {
+  padding: 7px 18px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btnInvite:hover {
+  transform: scale(1.05);
+}
+.btnSent {
+  padding: 7px 18px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(34,197,94,0.15);
+  color: #22c55e;
+  font-weight: 600;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.emptyFriends {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 30px;
+  font-size: 14px;
+}
+
+/* ============== Responsive ============== */
+@media (max-width: 640px) {
+  .watchPage { padding: 16px; }
+  .header { flex-direction: column; align-items: flex-start; }
+  .heroCard { padding: 32px 20px; }
+  .heroTitle { font-size: 24px; }
   .createdActions { flex-direction: column; }
+  .actionCard { flex-direction: row; padding: 14px 20px; }
+  .heroBtns { flex-direction: column; }
+  .heroBtns .btnPrimary, .heroBtns .btnGhost { width: 100%; justify-content: center; }
 }

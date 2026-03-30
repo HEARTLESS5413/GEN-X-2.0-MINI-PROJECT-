@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { watchAPI, usersAPI, UPLOADS_URL } from '@/lib/api';
@@ -74,11 +74,36 @@ export default function WatchPage() {
 
   return (
     <div className={styles.watchPage}>
+      {/* Animated background elements */}
+      <div className={styles.bgOrbs}>
+        <div className={styles.orb1}></div>
+        <div className={styles.orb2}></div>
+        <div className={styles.orb3}></div>
+      </div>
+
+      {/* Header */}
       <div className={styles.header}>
-        <h1 className="gradient-text" style={{ fontSize: 28, fontWeight: 800 }}>📺 Watch Party</h1>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-secondary" onClick={handleJoinById}>🔗 Join Room</button>
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>🎬 Create Room</button>
+        <div className={styles.headerLeft}>
+          <div className={styles.headerIcon}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <defs><linearGradient id="iconGrad" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stopColor="#a78bfa"/><stop offset="100%" stopColor="#ec4899"/></linearGradient></defs>
+              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polygon points="10,8 16,11 10,14" fill="url(#iconGrad)" stroke="none"/>
+            </svg>
+          </div>
+          <div>
+            <h1 className={styles.title}>Watch Party</h1>
+            <p className={styles.subtitle}>Sync videos with friends in real-time</p>
+          </div>
+        </div>
+        <div className={styles.headerActions}>
+          <button className={styles.btnGhost} onClick={handleJoinById}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Join Room
+          </button>
+          <button className={styles.btnPrimary} onClick={() => setShowCreate(true)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Create Room
+          </button>
         </div>
       </div>
 
@@ -86,62 +111,122 @@ export default function WatchPage() {
       {createdRoomId ? (
         <div className={styles.createdPanel}>
           <div className={styles.createdCard}>
-            <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-            <h2>Room Created!</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: 20 }}>Share with friends or enter the room</p>
+            <div className={styles.successIcon}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h2 className={styles.createdTitle}>Room is Live!</h2>
+            <p className={styles.createdSub}>Share the link or invite friends to start watching</p>
 
             <div className={styles.createdActions}>
-              <button className="btn btn-primary btn-lg" onClick={handleGoToRoom} style={{ flex: 1 }}>
-                ▶️ Enter Room
+              <button className={styles.actionCard} onClick={handleGoToRoom}>
+                <div className={styles.actionIcon} style={{background: 'linear-gradient(135deg, #a78bfa, #7c3aed)'}}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><polygon points="5,3 19,12 5,21"/></svg>
+                </div>
+                <span>Enter Room</span>
               </button>
-              <button className="btn btn-secondary btn-lg" onClick={handleCopyLink} style={{ flex: 1 }}>
-                {copied ? '✅ Copied!' : '🔗 Copy Link'}
+              <button className={styles.actionCard} onClick={handleCopyLink}>
+                <div className={styles.actionIcon} style={{background: 'linear-gradient(135deg, #06b6d4, #0284c7)'}}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                </div>
+                <span>{copied ? 'Copied!' : 'Copy Link'}</span>
               </button>
-              <button className="btn btn-secondary btn-lg" onClick={() => { setShowInvite(true); fetchFriends(); }} style={{ flex: 1 }}>
-                👋 Invite Friends
+              <button className={styles.actionCard} onClick={() => { setShowInvite(true); fetchFriends(); }}>
+                <div className={styles.actionIcon} style={{background: 'linear-gradient(135deg, #f472b6, #ec4899)'}}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                </div>
+                <span>Invite Friends</span>
               </button>
             </div>
           </div>
         </div>
       ) : (
-        /* Empty state */
-        <div className={styles.emptyState}>
-          <div style={{ fontSize: 72, marginBottom: 16 }}>📺</div>
-          <h2>Watch Together</h2>
-          <p style={{ color: 'var(--text-muted)', maxWidth: 400, margin: '0 auto 24px' }}>
-            Create a watch party room and invite friends to watch videos in sync with live chat and voice!
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button className="btn btn-primary btn-lg" onClick={() => setShowCreate(true)}>
-              🚀 Create Watch Room
-            </button>
-            <button className="btn btn-secondary btn-lg" onClick={handleJoinById}>
-              🔗 Join with Link
-            </button>
+        /* Hero / Empty state */
+        <div className={styles.heroSection}>
+          <div className={styles.heroCard}>
+            <div className={styles.heroVisual}>
+              <div className={styles.screenMock}>
+                <div className={styles.screenTop}>
+                  <span></span><span></span><span></span>
+                </div>
+                <div className={styles.screenBody}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(167,139,250,0.6)" strokeWidth="1.5"><polygon points="5,3 19,12 5,21"/></svg>
+                </div>
+              </div>
+              <div className={styles.avatarStack}>
+                <div className={styles.stackAvatar} style={{background: '#a78bfa'}}>A</div>
+                <div className={styles.stackAvatar} style={{background: '#ec4899'}}>B</div>
+                <div className={styles.stackAvatar} style={{background: '#06b6d4'}}>C</div>
+                <div className={styles.stackAvatar} style={{background: '#22c55e', fontSize: 12}}>+2</div>
+              </div>
+            </div>
+            <h2 className={styles.heroTitle}>Watch Together, <span>Anywhere</span></h2>
+            <p className={styles.heroDesc}>
+              Create a room, invite friends, and enjoy synced video playback with live chat. Perfect for movie nights, music sessions, or study groups.
+            </p>
+            <div className={styles.heroFeatures}>
+              <div className={styles.featureTag}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Synced Playback
+              </div>
+              <div className={styles.featureTag}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Live Chat
+              </div>
+              <div className={styles.featureTag}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                Invite Friends
+              </div>
+            </div>
+            <div className={styles.heroBtns}>
+              <button className={styles.btnPrimary} onClick={() => setShowCreate(true)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="5,3 19,12 5,21"/></svg>
+                Create Watch Room
+              </button>
+              <button className={styles.btnGhost} onClick={handleJoinById}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Join with Link
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Create Room Modal */}
       {showCreate && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}>
-          <div className="modal-content" style={{ padding: 28 }}>
-            <h3 className="gradient-text" style={{ fontSize: 20, marginBottom: 16 }}>Create Watch Room</h3>
-            <div className="input-group" style={{ marginBottom: 16 }}>
-              <label className="input-label">Video URL</label>
-              <input
-                className="input"
-                placeholder="Paste YouTube or video URL..."
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCreateRoom()}
-              />
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Supports YouTube links and direct video URLs</span>
+        <div className={styles.modalOverlay} onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}>
+          <div className={styles.modalCard}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalIcon}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <h3>Create Watch Room</h3>
+              <button onClick={() => setShowCreate(false)} className={styles.modalClose}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary" onClick={() => setShowCreate(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleCreateRoom} disabled={loading || !videoUrl.trim()}>
-                {loading ? 'Creating...' : '🎬 Create Room'}
+            <div className={styles.modalBody}>
+              <label className={styles.inputLabel}>Video URL</label>
+              <div className={styles.inputWrapper}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <input
+                  className={styles.inputField}
+                  placeholder="Paste YouTube or video URL..."
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateRoom()}
+                  autoFocus
+                />
+              </div>
+              <p className={styles.inputHint}>Supports YouTube links and direct video URLs</p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.btnGhost} onClick={() => setShowCreate(false)}>Cancel</button>
+              <button className={styles.btnPrimary} onClick={handleCreateRoom} disabled={loading || !videoUrl.trim()}>
+                {loading ? (
+                  <><span className={styles.spinner}></span> Creating...</>
+                ) : (
+                  <>Create Room</>
+                )}
               </button>
             </div>
           </div>
@@ -150,29 +235,38 @@ export default function WatchPage() {
 
       {/* Invite Friends Modal */}
       {showInvite && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowInvite(false)}>
-          <div className="modal-content" style={{ padding: 28 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0 }}>Invite Friends</h3>
-              <button onClick={() => setShowInvite(false)} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: 'var(--text-muted)' }}>×</button>
+        <div className={styles.modalOverlay} onClick={(e) => e.target === e.currentTarget && setShowInvite(false)}>
+          <div className={styles.modalCard}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalIcon}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ec4899" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              </div>
+              <h3>Invite Friends</h3>
+              <button onClick={() => setShowInvite(false)} className={styles.modalClose}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto' }}>
+            <div className={styles.friendList}>
               {friendsList.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 20 }}>No friends found.</p>
+                <p className={styles.emptyFriends}>No friends found. Follow users first!</p>
               ) : friendsList.map(friend => (
-                <div key={friend.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 10, background: 'var(--bg-secondary)', borderRadius: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div key={friend.id} className={styles.friendItem}>
+                  <div className={styles.friendInfo}>
                     {friend.avatar ? (
-                      <img src={`${UPLOADS_URL}${friend.avatar}`} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
+                      <img src={`${UPLOADS_URL}${friend.avatar}`} alt="" className={styles.friendAvatar} />
                     ) : (
-                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                        {friend.username[0].toUpperCase()}
-                      </div>
+                      <div className={styles.friendAvatarFb}>{friend.username[0].toUpperCase()}</div>
                     )}
-                    <span style={{ fontWeight: 600 }}>{friend.username}</span>
+                    <span className={styles.friendName}>{friend.username}</span>
                   </div>
-                  <button className="btn btn-primary btn-sm" onClick={() => handleInviteFriend(friend.id)} disabled={invitingId === friend.id}>
-                    {invitingId === friend.id ? '✓ Sent' : 'Invite'}
+                  <button
+                    className={invitingId === friend.id ? styles.btnSent : styles.btnInvite}
+                    onClick={() => handleInviteFriend(friend.id)}
+                    disabled={invitingId === friend.id}
+                  >
+                    {invitingId === friend.id ? (
+                      <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg> Sent</>
+                    ) : 'Invite'}
                   </button>
                 </div>
               ))}
