@@ -1,3 +1,8 @@
+// Queue structure: gameQueues[gameType] = [{ userId, socketId, sessionId }]
+const gameQueues = {
+  TIC_TAC_TOE: [], ROCK_PAPER_SCISSORS: [], CHESS: [], FLAPPY_BIRD: [], LUDO: [], GUESS_THE_WORD: []
+};
+
 function gameHandler(io, socket, prisma) {
   // Join game room
   socket.on('joinGame', ({ sessionId }) => {
@@ -7,6 +12,70 @@ function gameHandler(io, socket, prisma) {
   // Leave game room
   socket.on('leaveGame', ({ sessionId }) => {
     socket.leave(`game:${sessionId}`);
+  });
+
+  socket.on('disconnect', () => {
+    Object.keys(gameQueues).forEach(type => {
+      gameQueues[type] = gameQueues[type].filter(p => p.socketId !== socket.id);
+    });
+  });
+
+  // ==================== RANDOM MATCHMAKING ====================
+  socket.on('joinRandomQueue', async ({ sessionId, gameType }) => {
+    if (!gameQueues[gameType]) gameQueues[gameType] = [];
+    
+    // Check if user is already in queue
+    if (gameQueues[gameType].find(p => p.userId === socket.userId)) return;
+
+    if (gameQueues[gameType].length > 0) {
+      // Found a match!
+      const p1 = gameQueues[gameType].shift();
+      const p2 = { userId: socket.userId, socketId: socket.id, sessionId };
+
+      if (p1.userId === p2.userId) return; // Prevent self match
+
+      try {
+        const initialState = (await prisma.gameSession.findUnique({where: {id:p1.sessionId}})).state;
+        const mergedSession = await prisma.gameSession.update({
+          where: { id: p1.sessionId },
+          data: {
+            player2Id: p2.userId,
+            status: 'ACTIVE',
+            state: { ...initialState, isRandomMatch: true }
+          }
+        });
+
+        // Clean up P2's now abandoned WAITING session
+        await prisma.gameSession.delete({ where: { id: p2.sessionId } }).catch(() => {});
+
+        // Emit to P1
+        io.to(`game:${p1.sessionId}`).emit('gameUpdate', { sessionId: p1.sessionId, state: mergedSession.state, status: 'ACTIVE', winnerId: null, gameType });
+        
+        // Emit to P2 to redirect them natively to P1's session URL room
+        io.to(p2.socketId).emit('matchFound', { sessionId: p1.sessionId });
+      } catch (e) {
+        console.error('Matchmaking error:', e);
+      }
+    } else {
+      gameQueues[gameType].push({ userId: socket.userId, socketId: socket.id, sessionId });
+      socket.emit('queueStatus', { isQueueing: true });
+    }
+  });
+
+  socket.on('leaveRandomQueue', ({ gameType }) => {
+    if (gameQueues[gameType]) {
+      gameQueues[gameType] = gameQueues[gameType].filter(p => p.socketId !== socket.id);
+      socket.emit('queueStatus', { isQueueing: false });
+    }
+  });
+
+  // ==================== IN-GAME CHAT ====================
+  socket.on('sendGameChat', ({ sessionId, content }) => {
+    io.to(`game:${sessionId}`).emit('receiveGameChat', {
+      senderId: socket.userId,
+      content,
+      timestamp: new Date().toISOString()
+    });
   });
 
   // ==================== TIC TAC TOE ====================

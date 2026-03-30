@@ -44,6 +44,15 @@ export default function GamesPage() {
     } catch {}
   };
 
+  const handleCreateGame = async (gameType: string) => {
+    try {
+      const { data } = await gamesAPI.create(gameType, null as any);
+      router.push(`/games/${data.id}`);
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Failed to create game');
+    }
+  };
+
   return (
     <div className={styles.gamesPage}>
       <h1 className="gradient-text" style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>🎮 Games</h1>
@@ -79,11 +88,11 @@ export default function GamesPage() {
         <h2 className={styles.sectionTitle}>🕹️ Available Games</h2>
         <div className={styles.gameGrid}>
           {Object.entries(GAME_INFO).map(([type, info]) => (
-            <div key={type} className={styles.gameCard}>
+            <div key={type} className={styles.gameCard} onClick={() => handleCreateGame(type)} style={{ cursor: 'pointer' }}>
               <div className={styles.gameIcon} style={{ background: `${info.color}20`, color: info.color }}>{info.icon}</div>
               <h3>{info.name}</h3>
               <p>{info.desc}</p>
-              <span className={styles.gameTip}>Start from chat 🎮</span>
+              <span className={styles.gameTip} style={{ background: info.color, color: '#fff', borderRadius: '12px', padding: '4px 8px', fontSize: 12, marginTop: 12 }}>Play Now</span>
             </div>
           ))}
         </div>

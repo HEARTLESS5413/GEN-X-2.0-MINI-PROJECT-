@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { gamesAPI, UPLOADS_URL } from '@/lib/api';
+import { gamesAPI, usersAPI, UPLOADS_URL } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
 import styles from './gameroom.module.css';
 
@@ -25,6 +25,15 @@ export default function GameRoomPage() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showGameChanger, setShowGameChanger] = useState(false);
+  const [isQueueing, setIsQueueing] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [friendsList, setFriendsList] = useState<any[]>([]);
+  const [invitingId, setInvitingId] = useState<string | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
 
   useEffect(() => {
     loadSession();
@@ -37,6 +46,16 @@ export default function GameRoomPage() {
     socket.on('gameChanged', ({ session: s }: any) => { setSession(s); setShowGameChanger(false); });
     socket.on('gameUpdate', (data: any) => {
       setSession((prev: any) => prev ? { ...prev, state: data.state, status: data.status, winnerId: data.winnerId } : prev);
+      if (data.status === 'ACTIVE') setIsQueueing(false);
+    });
+    socket.on('matchFound', (data: { sessionId: string }) => {
+      router.push(`/games/${data.sessionId}`);
+    });
+    socket.on('queueStatus', (data: { isQueueing: boolean }) => {
+      setIsQueueing(data.isQueueing);
+    });
+    socket.on('receiveGameChat', (msg: any) => {
+      setChatMessages(prev => [...prev, msg]);
     });
     socket.on('rpsChosen', () => {});
     socket.on('rpsResult', (data: any) => {
@@ -48,10 +67,13 @@ export default function GameRoomPage() {
       socket.off('gameStarted');
       socket.off('gameChanged');
       socket.off('gameUpdate');
+      socket.off('matchFound');
+      socket.off('queueStatus');
+      socket.off('receiveGameChat');
       socket.off('rpsChosen');
       socket.off('rpsResult');
     };
-  }, [sessionId]);
+  }, [sessionId, router]);
 
   const loadSession = async () => {
     try {
@@ -79,6 +101,84 @@ export default function GameRoomPage() {
     try { const { data } = await gamesAPI.changeGame(sessionId, gameType); setSession(data); setShowGameChanger(false); } catch {}
   };
 
+  const handleJoinQueue = () => {
+    const socket = getSocket();
+    if (!socket) return;
+    socket.emit('joinRandomQueue', { sessionId, gameType: session.gameType });
+  };
+
+  const handleLeaveQueue = () => {
+    const socket = getSocket();
+    if (!socket) return;
+    socket.emit('leaveRandomQueue', { gameType: session.gameType });
+    setIsQueueing(false);
+  };
+
+  const sendChatMsg = (e: any) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    const socket = getSocket();
+    if (socket) socket.emit('sendGameChat', { sessionId, content: chatInput });
+    setChatInput('');
+  };
+
+  const fetchFriends = async () => {
+    if (!user?.id) return;
+    try {
+      const [{ data: followers }, { data: following }] = await Promise.all([
+        usersAPI.getFollowers(user.id),
+        usersAPI.getFollowing(user.id)
+      ]);
+      const uniqueFriends = Array.from(new Map([...followers, ...following].map((item: any) => [item.id, item])).values());
+      setFriendsList(uniqueFriends);
+    } catch (e) {
+      console.error('Failed to fetch friends', e);
+    }
+  };
+
+  const handleOpenInvite = () => {
+    setShowInviteModal(true);
+    fetchFriends();
+  };
+
+  const handleInviteFriend = async (friendId: string) => {
+    setInvitingId(friendId);
+    try {
+      // The fastest way to send a game invite is actually just using the chat API
+      // Wait, there is no generic chat API in client. We can emit it via socket!
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('sendMessage', {
+          receiverId: friendId,
+          content: `__GAME_INVITE__|${sessionId}|${session.gameType}|${GAME_INFO[session.gameType]?.name || session.gameType}`
+        });
+        alert('Invite sent!');
+        setShowInviteModal(false);
+      }
+    } catch (e) {
+      alert('Failed to send invite');
+    } finally {
+      setInvitingId(null);
+    }
+  };
+
+  const handleOpenProfile = async () => {
+    if (!opponent?.username) return;
+    try {
+      const { data } = await usersAPI.getProfile(opponent.username);
+      setProfileData(data);
+      setShowProfile(true);
+    } catch {}
+  };
+
+  const handleFollowOpponent = async () => {
+    if (!profileData?.id) return;
+    try {
+      await usersAPI.follow(profileData.id);
+      setProfileData((prev: any) => ({ ...prev, _count: { ...prev._count, followers: prev._count.followers + 1 }, isFollowing: true }));
+    } catch {}
+  };
+
   if (loading) return <div className="page-loading"><div className="spinner"></div></div>;
   if (!session) return <div style={{ padding: 40, textAlign: 'center' }}><h2>Game not found</h2></div>;
 
@@ -86,6 +186,9 @@ export default function GameRoomPage() {
   const isPlayer = session.player1Id === user?.id || session.player2Id === user?.id;
   const opponent = isHost ? session.player2 : session.player1;
   const gameInfo = GAME_INFO[session.gameType] || { name: session.gameType, icon: '🎮', color: '#888' };
+  const isRandomMatch = session.state?.isRandomMatch;
+  const oppMaskedUsername = isRandomMatch && session.status === 'ACTIVE' ? 'Random Challenger' : opponent?.username || 'Opponent';
+  const oppMaskedAvatar = isRandomMatch && session.status === 'ACTIVE' ? null : opponent?.avatar;
 
   // ============ WAITING STATE ============
   if (session.status === 'WAITING') {
@@ -113,12 +216,12 @@ export default function GameRoomPage() {
             <div className={styles.playerSlot}>
               {session.player2 ? (
                 <>
-                  {session.player2.avatar ? (
-                    <img src={`${UPLOADS_URL}${session.player2.avatar}`} alt="" className={styles.playerAvatar} />
+                  {oppMaskedAvatar ? (
+                    <img src={`${UPLOADS_URL}${oppMaskedAvatar}`} alt="" className={styles.playerAvatar} />
                   ) : (
-                    <div className={styles.playerAvatarFallback}>{session.player2.name?.[0]}</div>
+                    <div className={styles.playerAvatarFallback}>{oppMaskedUsername[0].toUpperCase()}</div>
                   )}
-                  <span>{session.player2.username}</span>
+                  <span>{oppMaskedUsername}</span>
                 </>
               ) : (
                 <>
@@ -135,8 +238,28 @@ export default function GameRoomPage() {
             </button>
           )}
 
+          {isHost && !session.player2Id && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 32, width: '100%', maxWidth: 300 }}>
+              {isQueueing ? (
+                <button className="btn btn-secondary" onClick={handleLeaveQueue}>
+                  <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
+                  Waiting for random player... (Cancel)
+                </button>
+              ) : (
+                <>
+                  <button className="btn btn-primary" onClick={handleOpenInvite}>
+                    👋 Invite Friends
+                  </button>
+                  <button className="btn btn-secondary" onClick={handleJoinQueue}>
+                    🎲 Play with Random
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
           {isHost && session.player2Id && (
-            <button className={styles.startBtn} onClick={handleStart}>
+            <button className={styles.startBtn} onClick={handleStart} style={{ marginTop: 24 }}>
               ▶️ Start Game
             </button>
           )}
@@ -160,6 +283,42 @@ export default function GameRoomPage() {
               ))}
             </div>
           )}
+          {/* Invite Modal */}
+          {showInviteModal && (
+            <div className={styles.modalOverlay} onClick={() => setShowInviteModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', padding: 24, borderRadius: 16, width: '90%', maxWidth: 400, boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <h3 style={{ margin: 0 }}>Invite Friends</h3>
+                  <button onClick={() => setShowInviteModal(false)} style={{ background:'none', border:'none', fontSize:24, cursor:'pointer', color: 'var(--text-muted)' }}>×</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 300, overflowY: 'auto' }}>
+                  {friendsList.length === 0 ? (
+                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 20 }}>No friends found.</p>
+                  ) : friendsList.map(friend => (
+                    <div key={friend.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'var(--bg-secondary)', borderRadius: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {friend.avatar ? (
+                          <img src={`${UPLOADS_URL}${friend.avatar}`} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                            {friend.username[0].toUpperCase()}
+                          </div>
+                        )}
+                        <span style={{ fontWeight: 600 }}>{friend.username}</span>
+                      </div>
+                      <button 
+                        className="btn btn-primary btn-sm" 
+                        onClick={() => handleInviteFriend(friend.id)}
+                        disabled={invitingId === friend.id}
+                      >
+                        {invitingId === friend.id ? 'Sending...' : 'Invite'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -174,13 +333,64 @@ export default function GameRoomPage() {
         <div className={styles.resultScreen}>
           <div className={styles.resultEmoji}>{draw ? '🤝' : won ? '🎉' : '😔'}</div>
           <h1 className={styles.resultTitle}>{draw ? 'Draw!' : won ? 'You Won!' : 'You Lost'}</h1>
-          <p className={styles.resultSub}>{gameInfo.name} vs {opponent?.username}</p>
+          <p className={styles.resultSub} style={{ marginBottom: 4 }}>{gameInfo.name} vs</p>
+          <div 
+            onClick={handleOpenProfile}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--bg-secondary)', padding: '8px 16px', borderRadius: 20, cursor: 'pointer', marginBottom: 24, transition: '0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            {opponent?.avatar ? (
+              <img src={`${UPLOADS_URL}${opponent.avatar}`} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                {opponent?.username?.[0]?.toUpperCase()}
+              </div>
+            )}
+            <span style={{ fontWeight: 600, fontSize: 18 }}>{opponent?.username}</span>
+          </div>
 
           <div className={styles.resultActions}>
             <button className={styles.startBtn} onClick={handleRematch}>🔁 Rematch</button>
             <button className="btn btn-secondary" onClick={() => setShowGameChanger(true)}>🔄 Change Game</button>
             <button className="btn btn-secondary" onClick={() => router.push('/messages')}>← Leave</button>
           </div>
+
+          {/* Floating Profile Modal inside FINISHED explicitly */}
+          {showProfile && profileData && (
+            <div className={styles.modalOverlay} onClick={() => setShowProfile(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', padding: '24px 32px', borderRadius: 24, width: '90%', maxWidth: 350, boxShadow: '0 10px 40px rgba(0,0,0,0.6)', textAlign: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setShowProfile(false)} style={{ background:'none', border:'none', fontSize:24, cursor:'pointer', color: 'var(--text-muted)' }}>×</button>
+                </div>
+                {profileData.avatar ? (
+                  <img src={`${UPLOADS_URL}${profileData.avatar}`} alt="" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 16px border: 4px solid var(--primary-color)' }} />
+                ) : (
+                  <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, fontWeight: 'bold', margin: '0 auto 16px' }}>
+                    {profileData.username[0].toUpperCase()}
+                  </div>
+                )}
+                <h2 style={{ margin: '0 0 4px', fontSize: 22 }}>{profileData.name}</h2>
+                <p style={{ margin: '0 0 16px', color: 'var(--text-muted)' }}>@{profileData.username}</p>
+                
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginBottom: 24 }}>
+                  <div><div style={{ fontWeight: 700, fontSize: 18 }}>{profileData._count?.followers || 0}</div><div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Followers</div></div>
+                  <div><div style={{ fontWeight: 700, fontSize: 18 }}>{profileData._count?.following || 0}</div><div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Following</div></div>
+                </div>
+
+                {!profileData.isFollowing && user?.id !== profileData.id && (
+                  <button className="btn btn-primary" onClick={handleFollowOpponent} style={{ width: '100%', padding: '12px', borderRadius: 24, fontWeight: 600 }}>
+                    Follow
+                  </button>
+                )}
+                {profileData.isFollowing && (
+                  <button className="btn btn-secondary" disabled style={{ width: '100%', padding: '12px', borderRadius: 24 }}>
+                    Following
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {showGameChanger && (
             <div className={styles.gameChangerGrid}>
@@ -200,6 +410,43 @@ export default function GameRoomPage() {
   // ============ ACTIVE STATE ============
   return (
     <div className={styles.roomPage}>
+      {/* Game Chat Overlay */}
+      <div className={styles.chatOverlayWrapper} style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 999 }}>
+        {showChat ? (
+          <div style={{ width: 300, height: 400, background: 'var(--bg-card)', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: 12, background: 'var(--primary-color)', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 600 }}>Game Chat</span>
+              <button onClick={() => setShowChat(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 16 }}>▼</button>
+            </div>
+            <div style={{ flex: 1, padding: 12, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {chatMessages.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: 12, marginTop: 'auto', marginBottom: 'auto' }}>Say hi to your opponent!</p>}
+              {chatMessages.map((msg, i) => {
+                const isMe = msg.senderId === user?.id;
+                return (
+                  <div key={i} style={{ alignSelf: isMe ? 'flex-end' : 'flex-start', background: isMe ? 'var(--primary-color)' : 'var(--bg-secondary)', color: isMe ? 'white' : 'var(--text-primary)', padding: '6px 12px', borderRadius: 16, maxWidth: '85%', fontSize: 14 }}>
+                    {msg.content}
+                  </div>
+                );
+              })}
+            </div>
+            <form onSubmit={sendChatMsg} style={{ padding: 8, borderTop: '1px solid var(--border-color)', display: 'flex', gap: 8 }}>
+              <input 
+                type="text" 
+                value={chatInput} 
+                onChange={(e) => setChatInput(e.target.value)} 
+                placeholder="Message..." 
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 20, border: 'none', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none' }} 
+              />
+              <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px', borderRadius: 20 }}>Send</button>
+            </form>
+          </div>
+        ) : (
+          <button onClick={() => setShowChat(true)} className="btn btn-primary" style={{ padding: '12px 20px', borderRadius: '30px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+            💬 Chat {chatMessages.length > 0 && `(${chatMessages.length})`}
+          </button>
+        )}
+      </div>
+
       <div className={styles.gameHeader}>
         <span className={styles.gameHeaderIcon}>{gameInfo.icon}</span>
         <h2>{gameInfo.name}</h2>
