@@ -27,6 +27,12 @@ function setupSocket(io, prisma) {
     const userId = socket.userId;
     console.log(`🟢 User connected: ${userId}`);
 
+    // Attach username for broadcast use
+    try {
+      const u = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+      if (u) socket.username = u.username;
+    } catch {}
+
     // Track online status
     if (!onlineUsers.has(userId)) {
       onlineUsers.set(userId, new Set());

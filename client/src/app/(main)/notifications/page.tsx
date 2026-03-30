@@ -80,6 +80,7 @@ export default function NotificationsPage() {
       case 'NEW_POST': return '📸';
       case 'MESSAGE': return '✉️';
       case 'GAME_INVITE': return '🎮';
+      case 'WATCH_INVITE': return '📺';
       case 'CALL': return '📞';
       default: return '🔔';
     }
@@ -227,6 +228,15 @@ export default function NotificationsPage() {
                       onClick={() => router.push(`/games/${notif.referenceId}`)}
                     >
                       🎮 Join Now
+                    </button>
+                  )}
+                  {notif.type === 'WATCH_INVITE' && notif.referenceId && (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      style={{ marginTop: 6, padding: '6px 16px', fontSize: 12, borderRadius: 16 }}
+                      onClick={() => router.push(`/watch/${notif.referenceId}`)}
+                    >
+                      📺 Join Watch Party
                     </button>
                   )}
                   <span className={styles.notifTime}>{timeAgo(notif.createdAt)}</span>

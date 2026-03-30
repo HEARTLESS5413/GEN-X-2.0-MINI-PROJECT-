@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { messagesAPI, usersAPI, gamesAPI, UPLOADS_URL } from '@/lib/api';
+import { messagesAPI, usersAPI, gamesAPI, watchAPI, UPLOADS_URL } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
 import Link from 'next/link';
 import styles from './messages.module.css';
@@ -42,6 +42,8 @@ export default function MessagesPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showGamePicker, setShowGamePicker] = useState(false);
+  const [showWatchModal, setShowWatchModal] = useState(false);
+  const [watchUrl, setWatchUrl] = useState('');
   const [chatIsAccepted, setChatIsAccepted] = useState(true);
   const [showRequests, setShowRequests] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -239,6 +241,29 @@ export default function MessagesPage() {
     return { sessionId: parts[1], gameType: parts[2], gameName: parts[3] };
   };
 
+  const isWatchInvite = (content: string | null) => content?.startsWith('__WATCH_INVITE__');
+
+  const parseWatchInvite = (content: string) => {
+    const parts = content.split('|');
+    return { roomId: parts[1], label: parts[2] || 'Watch Party' };
+  };
+
+  const handleWatchInvite = async () => {
+    if (!watchUrl.trim() || !chatUserId) return;
+    setShowWatchModal(false);
+    try {
+      const videoType = watchUrl.includes('youtube') || watchUrl.includes('youtu.be') ? 'youtube' : 'direct';
+      const { data } = await watchAPI.createRoom(watchUrl, videoType);
+      // Send invite via socket
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('watchSendInvite', { receiverId: chatUserId, roomId: data.id });
+      }
+      setWatchUrl('');
+      router.push(`/watch/${data.id}`);
+    } catch (err) { console.error(err); }
+  };
+
   const handleSearch = async (q: string) => {
     setSearchQuery(q);
     if (!q.trim()) { setSearchResults([]); return; }
@@ -356,9 +381,12 @@ export default function MessagesPage() {
                         {conv.lastMessage ? (() => {
                           const c = conv.lastMessage.content;
                           const prefix = conv.lastMessage.senderId === user?.id ? 'You: ' : '';
-                          if (c?.startsWith('__GAME_INVITE__')) {
+                           if (c?.startsWith('__GAME_INVITE__')) {
                             const gameName = c.split('|')[3] || 'Game';
                             return `${prefix}🎮 ${gameName} invite`;
+                          }
+                          if (c?.startsWith('__WATCH_INVITE__')) {
+                            return `${prefix}📺 Watch Party invite`;
                           }
                           return prefix + (c || '📷 Media');
                         })() : 'Start a conversation'}
@@ -462,6 +490,26 @@ export default function MessagesPage() {
                   </div>
                 );
               }
+              if (isWatchInvite(msg.content)) {
+                const invite = parseWatchInvite(msg.content!);
+                return (
+                  <div key={msg.id} className={`${styles.message} ${msg.senderId === user?.id ? styles.sent : styles.received}`}>
+                    <div className={styles.gameInviteCard}>
+                      <div className={styles.gameInviteIcon}>📺</div>
+                      <div className={styles.gameInviteText}>
+                        <strong>📺 Watch Party</strong>
+                        <span>{invite.label}</span>
+                      </div>
+                      <button className={styles.joinGameBtn} onClick={() => router.push(`/watch/${invite.roomId}`)}>
+                        {msg.senderId === user?.id ? 'Enter' : 'Join Now'}
+                      </button>
+                    </div>
+                    <div className={styles.msgMeta}>
+                      <span className={styles.msgTime}>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  </div>
+                );
+              }
               return (
                 <div key={msg.id} className={`${styles.message} ${msg.senderId === user?.id ? styles.sent : styles.received} ${msg.vanishing ? styles.vanishingMsg : ''}`}>
                   {msg.mediaUrl && (
@@ -500,6 +548,27 @@ export default function MessagesPage() {
                         <span>{g.name}</span>
                       </button>
                     ))}
+                  </div>
+                )}
+              </div>
+              <div style={{ position: 'relative' }}>
+                <button className="btn btn-ghost btn-icon" onClick={() => setShowWatchModal(!showWatchModal)} title="Watch Together" style={{ fontSize: 16 }}>📺</button>
+                {showWatchModal && (
+                  <div className={styles.gamePickerDropdown} style={{ minWidth: 260 }}>
+                    <div className={styles.gamePickerHeader}>Watch Together</div>
+                    <div style={{ padding: '8px 12px' }}>
+                      <input
+                        className="input"
+                        placeholder="Paste YouTube URL..."
+                        value={watchUrl}
+                        onChange={(e) => setWatchUrl(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleWatchInvite()}
+                        style={{ fontSize: 13, marginBottom: 8 }}
+                      />
+                      <button className="btn btn-primary btn-sm" onClick={handleWatchInvite} disabled={!watchUrl.trim()} style={{ width: '100%' }}>
+                        🎬 Start Watch Party
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

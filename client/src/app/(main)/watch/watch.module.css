@@ -1,35 +1,30 @@
-.watchPage { max-width: 1100px; margin: 0 auto; padding: 24px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-
-/* Active Room */
-.activeRoom { display: flex; gap: 0; height: calc(100vh - 130px); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border-color); }
-.videoSection { flex: 1; display: flex; flex-direction: column; background: #000; }
-.videoContainer { flex: 1; position: relative; }
-.videoPlayer { width: 100%; height: 100%; border: none; display: block; }
-.videoControls { padding: 12px 16px; background: var(--bg-secondary); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); }
-.roomInfo { display: flex; gap: 16px; align-items: center; }
-.roomHost { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
-.viewerCount { font-size: 13px; color: var(--accent-primary); font-weight: 600; }
-
-/* Chat Panel */
-.chatPanel { width: 320px; display: flex; flex-direction: column; background: var(--bg-secondary); border-left: 1px solid var(--border-color); }
-.chatHeader { padding: 14px 16px; border-bottom: 1px solid var(--border-color); }
-.chatHeader h3 { font-size: 15px; font-weight: 700; }
-.chatMessages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
-.chatMsg { font-size: 13px; line-height: 1.4; font-family: var(--font-secondary); }
-.chatUser { color: var(--accent-primary); margin-right: 6px; font-size: 12px; }
-.systemMsg { text-align: center; }
-.systemText { font-size: 11px; color: var(--text-muted); font-style: italic; }
-.chatInput { padding: 10px 12px; border-top: 1px solid var(--border-color); display: flex; gap: 8px; }
-.chatInput .input { border-radius: var(--radius-full); font-size: 13px; padding: 8px 14px; }
+.watchPage { max-width: 800px; margin: 0 auto; padding: 24px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
 
 /* Empty State */
 .emptyState { text-align: center; padding: 80px 20px; }
 .emptyState h2 { font-size: 24px; font-weight: 800; margin: 16px 0 8px; color: var(--text-primary); }
-.emptyState p { color: var(--text-muted); font-size: 14px; max-width: 400px; margin: 0 auto; line-height: 1.5; }
+.emptyState p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
 
-@media (max-width: 900px) {
-  .activeRoom { flex-direction: column; height: auto; }
-  .chatPanel { width: 100%; height: 300px; border-left: none; border-top: 1px solid var(--border-color); }
+/* Created Panel */
+.createdPanel { display: flex; justify-content: center; padding: 60px 20px; }
+.createdCard {
+  text-align: center;
+  background: var(--bg-card);
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.2);
 }
-@media (max-width: 768px) { .watchPage { padding: 12px; } }
+.createdCard h2 { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+.createdActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .watchPage { padding: 12px; }
+  .createdActions { flex-direction: column; }
+}

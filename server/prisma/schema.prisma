@@ -306,6 +306,8 @@ model WatchRoom {
   videoType   String   @default("youtube")
   currentTime Float    @default(0)
   isPlaying   Boolean  @default(false)
+  videoQueue  Json     @default("[]")
+  status      String   @default("ACTIVE")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

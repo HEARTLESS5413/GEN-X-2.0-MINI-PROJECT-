@@ -115,6 +115,11 @@ export const watchAPI = {
   getRoom: (roomId: string) => api.get(`/watch/${roomId}`),
   joinRoom: (roomId: string) => api.post(`/watch/${roomId}/join`),
   leaveRoom: (roomId: string) => api.post(`/watch/${roomId}/leave`),
+  invite: (roomId: string, userIds: string[]) => api.post(`/watch/${roomId}/invite`, { userIds }),
+  queueVideo: (roomId: string, videoUrl: string) => api.post(`/watch/${roomId}/queue`, { videoUrl }),
+  acceptQueue: (roomId: string, index: number) => api.post(`/watch/${roomId}/queue/${index}/accept`),
+  rejectQueue: (roomId: string, index: number) => api.delete(`/watch/${roomId}/queue/${index}`),
+  closeRoom: (roomId: string) => api.delete(`/watch/${roomId}/close`),
 };
 
 // Explore
