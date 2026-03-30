@@ -197,6 +197,21 @@ export default function WatchRoomPage() {
               onSeeked={() => handleVideoEvent('seek')}
             />
           )}
+          {/* Floating chat overlay on video */}
+          <div className={styles.floatingChat}>
+            {chatMessages.slice(-5).map((msg, i) => (
+              <div key={i} className={`${styles.floatingMsg} ${msg.system ? styles.floatingSystem : ''}`}>
+                {msg.system ? (
+                  <span>{msg.text}</span>
+                ) : (
+                  <>
+                    <strong>{msg.userId === user?.id ? 'You' : msg.username}</strong>
+                    <span>{msg.message}</span>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Room Controls */}

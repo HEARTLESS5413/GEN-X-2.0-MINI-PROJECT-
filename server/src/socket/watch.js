@@ -1,12 +1,19 @@
 function watchHandler(io, socket, prisma) {
+  // Track which rooms this socket has joined to prevent duplicate join messages
+  const joinedRooms = new Set();
+
   // Join watch room
   socket.on('joinWatchRoom', ({ roomId }) => {
     socket.join(`watch:${roomId}`);
-    io.to(`watch:${roomId}`).emit('watchMemberJoined', {
-      roomId,
-      userId: socket.userId,
-      username: socket.username || 'User'
-    });
+    // Only broadcast "joined" if this socket hasn't joined this room before
+    if (!joinedRooms.has(roomId)) {
+      joinedRooms.add(roomId);
+      socket.to(`watch:${roomId}`).emit('watchMemberJoined', {
+        roomId,
+        userId: socket.userId,
+        username: socket.username || 'User'
+      });
+    }
   });
 
   // Leave watch room

@@ -101,6 +101,15 @@ router.post('/:roomId/leave', auth, async (req, res) => {
       username: req.user.username
     });
 
+    // Auto-delete room if no members remain
+    const remaining = await prisma.watchRoomMember.count({
+      where: { roomId: req.params.roomId }
+    });
+    if (remaining === 0) {
+      await prisma.watchRoom.delete({ where: { id: req.params.roomId } }).catch(() => {});
+      io.to(`watch:${req.params.roomId}`).emit('watchRoomClosed', { roomId: req.params.roomId });
+    }
+
     res.json({ message: 'Left watch room.' });
   } catch (error) {
     res.status(500).json({ error: 'Server error.' });
