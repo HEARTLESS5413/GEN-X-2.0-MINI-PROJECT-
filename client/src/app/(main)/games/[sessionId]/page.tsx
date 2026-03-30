@@ -460,9 +460,8 @@ function LudoGame({ session, user }: any) {
       setDisplayDice(session.state.dice);
     } else if (session.state.dice && session.state.rolled && !isRolling) {
       setDisplayDice(session.state.dice);
-    } else if (!session.state.rolled) {
-      setDisplayDice(null);
     }
+    // Removed the automatic clearing to null so users can see their skipped turn rolls.
   }, [session.state.dice, session.state.rolled, session.state.currentTurn, user?.id, isRolling]);
 
   const handleRoll = () => {
@@ -533,6 +532,24 @@ function LudoGame({ session, user }: any) {
     if (!myTurn || !session.state.rolled || isRolling || !session.state.dice) return false;
     if (pos === -1) return session.state.dice === 6;
     return pos + session.state.dice <= 57;
+  };
+
+  const renderDiceFaces = (num: number) => {
+    const dots: any = {
+      1: ['center'],
+      2: ['topLeft', 'bottomRight'],
+      3: ['topLeft', 'center', 'bottomRight'],
+      4: ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'],
+      5: ['topLeft', 'topRight', 'center', 'bottomLeft', 'bottomRight'],
+      6: ['topLeft', 'topRight', 'middleLeft', 'middleRight', 'bottomLeft', 'bottomRight']
+    };
+    return (
+      <div className={styles.diceFace}>
+        {dots[num]?.map((pos: string) => (
+          <div key={pos} className={`${styles.diceDot} ${styles[pos]}`} />
+        ))}
+      </div>
+    );
   };
 
   const renderBoardGrid = () => {
@@ -626,7 +643,7 @@ function LudoGame({ session, user }: any) {
           onClick={handleRoll}
           disabled={!myTurn || session.state.rolled || isRolling}
         >
-          {displayDice ? displayDice : '🎲'}
+          {displayDice ? renderDiceFaces(displayDice) : '🎲'}
         </button>
         <span style={{fontSize: 13, color: 'var(--text-muted)'}}>
           {!myTurn ? 'Waiting for opponent...' : !session.state.rolled ? 'Click dice to roll' : 'Pick a glowing token to move'}

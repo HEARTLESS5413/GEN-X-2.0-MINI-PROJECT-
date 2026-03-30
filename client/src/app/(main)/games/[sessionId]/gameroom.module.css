@@ -139,7 +139,15 @@
   100% { transform: rotate(360deg) scale(1); }
 }
 
-/* Guess the Word */
+.diceFace { position: relative; width: 100%; height: 100%; border-radius: 8px; }
+.diceDot { width: 12px; height: 12px; background: #1e1e2f; border-radius: 50%; position: absolute; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+.center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.topLeft { top: 8px; left: 8px; }
+.topRight { top: 8px; right: 8px; }
+.bottomLeft { bottom: 8px; left: 8px; }
+.bottomRight { bottom: 8px; right: 8px; }
+.middleLeft { top: 50%; left: 8px; transform: translateY(-50%); }
+.middleRight { top: 50%; right: 8px; transform: translateY(-50%); }/* Guess the Word */
 .hangmanArea { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 24px; }
 .hangmanFace { font-size: 64px; }
 .wrongBar { display: flex; gap: 6px; }
