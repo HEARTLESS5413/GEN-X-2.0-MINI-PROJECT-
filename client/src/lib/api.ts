@@ -106,6 +106,7 @@ export const gamesAPI = {
   start: (sessionId: string) => api.post(`/games/${sessionId}/start`),
   rematch: (sessionId: string) => api.post(`/games/${sessionId}/rematch`),
   changeGame: (sessionId: string, gameType: string) => api.post(`/games/${sessionId}/change-game`, { gameType }),
+  closeGame: (sessionId: string) => api.delete(`/games/${sessionId}/close`),
 };
 
 // Watch

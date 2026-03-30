@@ -64,6 +64,10 @@ export default function GameRoomPage() {
     socket.on('receiveGameChat', (msg: any) => {
       setChatMessages(prev => [...prev, msg]);
     });
+    socket.on('gameClosed', () => {
+      alert('This game session has been closed.');
+      router.push('/games');
+    });
     socket.on('rpsChosen', () => {});
     socket.on('rpsResult', (data: any) => {
       setSession((prev: any) => prev ? { ...prev, state: { ...prev.state, scores: data.scores, round: data.round }, status: data.status, winnerId: data.winnerId } : prev);
@@ -77,6 +81,7 @@ export default function GameRoomPage() {
       socket.off('matchFound');
       socket.off('queueStatus');
       socket.off('receiveGameChat');
+      socket.off('gameClosed');
       socket.off('rpsChosen');
       socket.off('rpsResult');
     };
@@ -106,6 +111,16 @@ export default function GameRoomPage() {
   };
   const handleChangeGame = async (gameType: string) => {
     try { const { data } = await gamesAPI.changeGame(sessionId, gameType); setSession(data); setShowGameChanger(false); } catch {}
+  };
+
+  const handleCloseGame = async () => {
+    if (!confirm('Are you sure you want to close this game session?')) return;
+    try {
+      await gamesAPI.closeGame(sessionId);
+      router.push('/games');
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Failed to close game');
+    }
   };
 
   const handleJoinQueue = () => {
@@ -153,13 +168,13 @@ export default function GameRoomPage() {
   const handleInviteFriend = async (friendId: string) => {
     setInvitingId(friendId);
     try {
-      // The fastest way to send a game invite is actually just using the chat API
-      // Wait, there is no generic chat API in client. We can emit it via socket!
       const socket = getSocket();
       if (socket) {
-        socket.emit('sendMessage', {
+        socket.emit('sendGameInvite', {
           receiverId: friendId,
-          content: `__GAME_INVITE__|${sessionId}|${session.gameType}|${GAME_INFO[session.gameType]?.name || session.gameType}`
+          sessionId,
+          gameType: session.gameType,
+          gameName: GAME_INFO[session.gameType]?.name || session.gameType
         });
         alert('Invite sent!');
         setShowInviteModal(false);
@@ -283,7 +298,8 @@ export default function GameRoomPage() {
 
           <div className={styles.waitingActions}>
             <button className="btn btn-secondary btn-sm" onClick={() => setShowGameChanger(true)}>🔄 Change Game</button>
-            <button className="btn btn-secondary btn-sm" onClick={() => router.push('/messages')}>← Back to Chat</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => router.push('/games')}>← Back</button>
+            <button className="btn btn-secondary btn-sm" onClick={handleCloseGame} style={{ color: '#ef4444' }}>✕ Close Game</button>
           </div>
 
           {showGameChanger && (

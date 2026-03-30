@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { notificationsAPI, usersAPI, UPLOADS_URL } from '@/lib/api';
 import { useNotificationStore } from '@/store/notificationStore';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import styles from './notifications.module.css';
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { notifications, setNotifications, markAllRead } = useNotificationStore();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'requests' | 'activity'>('requests');
@@ -218,6 +220,15 @@ export default function NotificationsPage() {
                     )}
                     <p className={styles.notifText}>{notif.content}</p>
                   </div>
+                  {notif.type === 'GAME_INVITE' && notif.referenceId && (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      style={{ marginTop: 6, padding: '6px 16px', fontSize: 12, borderRadius: 16 }}
+                      onClick={() => router.push(`/games/${notif.referenceId}`)}
+                    >
+                      🎮 Join Now
+                    </button>
+                  )}
                   <span className={styles.notifTime}>{timeAgo(notif.createdAt)}</span>
                 </div>
               </div>

@@ -75,6 +75,21 @@ export default function GamesPage() {
                     <strong>{info.name}</strong>
                     <span>vs {opponent?.username || 'Waiting...'} · {game.status}</span>
                   </div>
+                  <button 
+                    className="btn btn-secondary btn-sm" 
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (confirm('Are you sure you want to close this game?')) {
+                        try {
+                          await gamesAPI.closeGame(game.id);
+                          setActiveGames(prev => prev.filter(g => g.id !== game.id));
+                        } catch (err) {
+                          alert('Failed to close game');
+                        }
+                      }
+                    }}
+                    style={{ marginRight: 8, color: '#ef4444' }}
+                  >✕ Close</button>
                   <button className="btn btn-primary btn-sm">Resume</button>
                 </div>
               );

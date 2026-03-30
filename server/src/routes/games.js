@@ -288,4 +288,29 @@ router.get('/history/me', auth, async (req, res) => {
   }
 });
 
+// Close / Cancel game session
+router.delete('/:sessionId/close', auth, async (req, res) => {
+  try {
+    const session = await prisma.gameSession.findUnique({ where: { id: req.params.sessionId } });
+    if (!session) return res.status(404).json({ error: 'Game not found.' });
+
+    // Only a player in this game can close it
+    if (session.player1Id !== req.user.id && session.player2Id !== req.user.id) {
+      return res.status(403).json({ error: 'Not a player in this game.' });
+    }
+
+    // Delete the session
+    await prisma.gameSession.delete({ where: { id: req.params.sessionId } });
+
+    // Notify all players
+    const io = req.app.get('io');
+    io.to(`game:${req.params.sessionId}`).emit('gameClosed', { sessionId: req.params.sessionId, closedBy: req.user.id });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Close game error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
 module.exports = router;

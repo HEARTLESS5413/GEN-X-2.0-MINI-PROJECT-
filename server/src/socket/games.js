@@ -83,6 +83,43 @@ function gameHandler(io, socket, prisma) {
     });
   });
 
+  // ==================== GAME INVITE (from waiting room) ====================
+  socket.on('sendGameInvite', async ({ receiverId, sessionId, gameType, gameName }) => {
+    try {
+      const sender = await prisma.user.findUnique({ where: { id: socket.userId }, select: { username: true, name: true, avatar: true } });
+      if (!sender) return;
+
+      const inviteContent = `__GAME_INVITE__|${sessionId}|${gameType}|${gameName}`;
+
+      // Create chat message
+      const message = await prisma.message.create({
+        data: {
+          senderId: socket.userId,
+          receiverId,
+          content: inviteContent,
+          accepted: true,
+        }
+      });
+      io.to(`user:${receiverId}`).emit('newMessage', { ...message, isGameInvite: true });
+      socket.emit('messageSent', { ...message, isGameInvite: true });
+
+      // Create notification with referenceId for "Join Now"
+      const notification = await prisma.notification.create({
+        data: {
+          userId: receiverId,
+          senderId: socket.userId,
+          type: 'GAME_INVITE',
+          referenceId: sessionId,
+          content: `${sender.username} invited you to play ${gameName}!`,
+        },
+        include: { sender: { select: { id: true, username: true, avatar: true, name: true } } }
+      });
+      io.to(`user:${receiverId}`).emit('notification', notification);
+    } catch (e) {
+      console.error('sendGameInvite error:', e);
+    }
+  });
+
   // ==================== TIC TAC TOE ====================
   socket.on('tttMove', async ({ sessionId, index }) => {
     try {
