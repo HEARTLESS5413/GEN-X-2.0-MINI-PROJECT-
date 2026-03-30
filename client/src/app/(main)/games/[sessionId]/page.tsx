@@ -451,71 +451,186 @@ function LudoGame({ session, user }: any) {
   const isP1 = session.player1Id === user?.id;
   const myKey = isP1 ? 'p1' : 'p2';
   const myTurn = session.state.currentTurn === user?.id;
+  
+  const [isRolling, setIsRolling] = useState(false);
+  const [displayDice, setDisplayDice] = useState<number | null>(session.state.dice);
+
+  useEffect(() => {
+    if (session.state.dice && session.state.rolled && session.state.currentTurn !== user?.id) {
+      setDisplayDice(session.state.dice);
+    } else if (session.state.dice && session.state.rolled && !isRolling) {
+      setDisplayDice(session.state.dice);
+    } else if (!session.state.rolled) {
+      setDisplayDice(null);
+    }
+  }, [session.state.dice, session.state.rolled, session.state.currentTurn, user?.id, isRolling]);
 
   const handleRoll = () => {
-    const socket = getSocket();
-    if (socket) socket.emit('ludoRoll', { sessionId: session.id });
+    if (!myTurn || session.state.rolled || isRolling) return;
+    setIsRolling(true);
+    let spins = 0;
+    const interval = setInterval(() => {
+      setDisplayDice(Math.floor(Math.random() * 6) + 1);
+      spins++;
+      // Spin animation for 500ms
+      if (spins > 10) {
+        clearInterval(interval);
+        setIsRolling(false);
+        const socket = getSocket();
+        if (socket) socket.emit('ludoRoll', { sessionId: session.id });
+      }
+    }, 50);
   };
 
   const handleMove = (tokenIndex: number) => {
+    if (!myTurn || !session.state.rolled || isRolling) return;
     const socket = getSocket();
     if (socket) socket.emit('ludoMove', { sessionId: session.id, tokenIndex });
   };
 
-  const colors = { p1: '#8B5CF6', p2: '#EC4899' };
-  const tokens = session.state.tokens;
+  // Absolute Ludo 52-tile Path Mapping
+  const LUDO_PATH = [
+    {r:6,c:1}, {r:6,c:2}, {r:6,c:3}, {r:6,c:4}, {r:6,c:5}, // red exit
+    {r:5,c:6}, {r:4,c:6}, {r:3,c:6}, {r:2,c:6}, {r:1,c:6}, {r:0,c:6},
+    {r:0,c:7}, {r:0,c:8}, // blue area turn
+    {r:1,c:8}, {r:2,c:8}, {r:3,c:8}, {r:4,c:8}, {r:5,c:8},
+    {r:6,c:9}, {r:6,c:10}, {r:6,c:11}, {r:6,c:12}, {r:6,c:13}, {r:6,c:14}, // yellow start
+    {r:7,c:14}, {r:8,c:14}, // yellow turn
+    {r:8,c:13}, {r:8,c:12}, {r:8,c:11}, {r:8,c:10}, {r:8,c:9},
+    {r:9,c:8}, {r:10,c:8}, {r:11,c:8}, {r:12,c:8}, {r:13,c:8}, {r:14,c:8}, // green start
+    {r:14,c:7}, {r:14,c:6}, // green turn
+    {r:13,c:6}, {r:12,c:6}, {r:11,c:6}, {r:10,c:6}, {r:9,c:6},
+    {r:8,c:5}, {r:8,c:4}, {r:8,c:3}, {r:8,c:2}, {r:8,c:1}, {r:8,c:0}, // red start
+    {r:7,c:0}, {r:6,c:0} // final turn into home paths
+  ];
+
+  const HOME_PATHS: any = {
+    p1: [{r:7,c:1}, {r:7,c:2}, {r:7,c:3}, {r:7,c:4}, {r:7,c:5}, {r:7,c:6}, {r:7,c:7}],
+    p2: [{r:7,c:13}, {r:7,c:12}, {r:7,c:11}, {r:7,c:10}, {r:7,c:9}, {r:7,c:8}, {r:7,c:7}],
+  };
+
+  const BASE_YARDS: any = {
+    p1: [{r:1.5,c:1.5}, {r:1.5,c:3.5}, {r:3.5,c:1.5}, {r:3.5,c:3.5}],
+    p2: [{r:10.5,c:10.5}, {r:10.5,c:12.5}, {r:12.5,c:10.5}, {r:12.5,c:12.5}],
+  };
+
+  const SAFE_TILES = [0, 8, 13, 21, 26, 34, 39, 47];
+
+  const getTokenCoords = (playerKey: string, pos: number, tokenIndex: number) => {
+    if (pos === -1) return BASE_YARDS[playerKey][tokenIndex];
+    if (pos >= 0 && pos <= 50) {
+      const startIdx = playerKey === 'p1' ? 0 : 26;
+      const absIdx = (startIdx + pos) % 52;
+      return LUDO_PATH[absIdx];
+    }
+    if (pos >= 51 && pos <= 57) {
+      return HOME_PATHS[playerKey][pos - 51];
+    }
+    return {r:7,c:7}; // Center fallback
+  };
+
+  const canMove = (pos: number) => {
+    if (!myTurn || !session.state.rolled || isRolling || !session.state.dice) return false;
+    if (pos === -1) return session.state.dice === 6;
+    return pos + session.state.dice <= 57;
+  };
+
+  const renderBoardGrid = () => {
+    const cells = [];
+    for (let r = 0; r < 15; r++) {
+      for (let c = 0; c < 15; c++) {
+        // Render 4 corner Bases as block containers
+        if (r < 6 && c < 6 && r===0 && c===0) {
+          cells.push(<div key={`baseR`} className={styles.ludoBase} style={{ gridArea: '1/1/7/7', background: '#ef4444' }}><div className={styles.ludoBaseInner}><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/></div></div>);
+        } else if (r < 6 && c > 8 && r===0 && c===9) {
+          cells.push(<div key={`baseB`} className={styles.ludoBase} style={{ gridArea: '1/10/7/16', background: '#3b82f6' }}><div className={styles.ludoBaseInner}><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/></div></div>);
+        } else if (r > 8 && c < 6 && r===9 && c===0) {
+          cells.push(<div key={`baseG`} className={styles.ludoBase} style={{ gridArea: '10/1/16/7', background: '#22c55e' }}><div className={styles.ludoBaseInner}><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/></div></div>);
+        } else if (r > 8 && c > 8 && r===9 && c===9) {
+          cells.push(<div key={`baseY`} className={styles.ludoBase} style={{ gridArea: '10/10/16/16', background: '#eab308' }}><div className={styles.ludoBaseInner}><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/><div className={styles.ludoBaseHole}/></div></div>);
+        } else if (r >= 6 && r <= 8 && c >= 6 && c <= 8 && r===6 && c===6) {
+          cells.push(<div key={`center`} className={styles.ludoCenter} style={{ gridArea: '7/7/10/10' }}></div>);
+        }
+        
+        // Skip rendering small cells inside large mapped blocks
+        if ((r<6&&c<6) || (r<6&&c>8) || (r>8&&c<6) || (r>8&&c>8) || (r>=6&&r<=8&&c>=6&&c<=8)) continue;
+
+        // Path styling
+        let bg = 'transparent';
+        const absIdx = LUDO_PATH.findIndex(p => p.r === r && p.c === c);
+        const hasStar = SAFE_TILES.includes(absIdx);
+        
+        // Home stretches
+        if (r === 7 && c >= 1 && c <= 5) bg = '#fca5a5';
+        if (r === 7 && c >= 9 && c <= 13) bg = '#fef08a';
+        if (c === 7 && r >= 1 && r <= 5) bg = '#93c5fd';
+        if (c === 7 && r >= 9 && r <= 13) bg = '#86efac';
+        // Star squares
+        if (r===6 && c===1) bg = '#fca5a5';
+        if (r===1 && c===8) bg = '#93c5fd';
+        if (r===8 && c===13) bg = '#fef08a';
+        if (r===13 && c===6) bg = '#86efac';
+
+        cells.push(
+          <div key={`cell-${r}-${c}`} className={styles.ludoCell} style={{ gridArea: `${r+1}/${c+1}/${r+2}/${c+2}`, background: bg }}>
+            {hasStar ? <span className={styles.ludoStar}>⭐</span> : null}
+          </div>
+        );
+      }
+    }
+    return cells;
+  };
 
   return (
     <div className={styles.gameArea}>
-      <p className={styles.turnText}>{myTurn ? "🎲 Your turn!" : "⏳ Opponent's turn..."}</p>
-
-      <div className={styles.ludoBoard}>
-        <div className={styles.ludoInfo}>
-          <div><span style={{ color: colors.p1 }}>●</span> {session.player1?.username}: {session.state.finished?.p1 || 0}/4 home</div>
-          <div><span style={{ color: colors.p2 }}>●</span> {session.player2?.username}: {session.state.finished?.p2 || 0}/4 home</div>
+      <div className={styles.ludoHeader}>
+        <div className={styles.p1Tag}>{session.player1?.username} {session.state.finished?.p1 >= 4 && '🏆'}</div>
+        <div className={styles.turnText} style={{ margin: 0, fontSize: 18 }}>
+          {myTurn ? "🎲 Your turn!" : "⏳ Opponent waiting..."}
         </div>
+        <div className={styles.p2Tag}>{session.player2?.username} {session.state.finished?.p2 >= 4 && '🏆'}</div>
+      </div>
 
-        {session.state.dice && (
-          <div className={styles.diceResult}>🎲 {session.state.dice}</div>
-        )}
+      <div className={styles.ludoWrapper}>
+        <div className={styles.ludoGrid}>{renderBoardGrid()}</div>
+        
+        {/* Render Tokens dynamically on top of grid absolute */}
+        {['p1', 'p2'].map((key) => {
+          return session.state.tokens[key].map((pos: number, i: number) => {
+            const coords = getTokenCoords(key, pos, i);
+            const moveAllowed = myTurn && key === myKey && canMove(pos);
+            const tokenClass = key === 'p1' ? styles.tokenP1 : styles.tokenP2;
+            const isFinished = pos === 57;
+            
+            return (
+              <div 
+                key={`${key}-${i}`} 
+                className={`${styles.ludoToken} ${tokenClass} ${moveAllowed ? styles.tokenCanMove : ''}`}
+                style={{ 
+                  top: `${(coords.r + 0.5) * 100 / 15}%`, 
+                  left: `${(coords.c + 0.5) * 100 / 15}%`,
+                  display: isFinished ? 'none' : 'block'
+                }}
+                onClick={() => moveAllowed && handleMove(i)}
+                title={isFinished ? 'Finished!' : `Pos: ${pos}`}
+              />
+            );
+          });
+        })}
+      </div>
 
-        {myTurn && !session.state.rolled && (
-          <button className={styles.rollBtn} onClick={handleRoll}>🎲 Roll Dice</button>
-        )}
-
-        {myTurn && session.state.rolled && (
-          <div className={styles.tokenPicker}>
-            <p>Pick a token to move:</p>
-            <div className={styles.tokenRow}>
-              {tokens[myKey].map((pos: number, i: number) => (
-                <button key={i} className={styles.tokenBtn} onClick={() => handleMove(i)}
-                  style={{ background: colors[myKey], opacity: pos === 57 ? 0.3 : 1 }}
-                  disabled={pos === 57}>
-                  {pos === 0 ? '🏠' : pos === 57 ? '🏆' : pos}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className={styles.ludoTrack}>
-          <div className={styles.trackLabel}>Your tokens:</div>
-          <div className={styles.tokenRow}>
-            {tokens[myKey].map((pos: number, i: number) => (
-              <div key={i} className={styles.tokenDisplay} style={{ background: colors[myKey] }}>
-                {pos === 0 ? '🏠' : pos === 57 ? '🏆' : pos}
-              </div>
-            ))}
-          </div>
-          <div className={styles.trackLabel}>Opponent tokens:</div>
-          <div className={styles.tokenRow}>
-            {tokens[isP1 ? 'p2' : 'p1'].map((pos: number, i: number) => (
-              <div key={i} className={styles.tokenDisplay} style={{ background: colors[isP1 ? 'p2' : 'p1'] }}>
-                {pos === 0 ? '🏠' : pos === 57 ? '🏆' : pos}
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className={styles.diceContainer}>
+        {session.state.consecutiveSixes > 0 && <span style={{fontSize: 14, color: '#ef4444', fontWeight:800}}>🔥 Rolling streak: {session.state.consecutiveSixes} !</span>}
+        <button 
+          className={`${styles.diceCube} ${isRolling ? styles.diceSpinning : ''}`} 
+          onClick={handleRoll}
+          disabled={!myTurn || session.state.rolled || isRolling}
+        >
+          {displayDice ? displayDice : '🎲'}
+        </button>
+        <span style={{fontSize: 13, color: 'var(--text-muted)'}}>
+          {!myTurn ? 'Waiting for opponent...' : !session.state.rolled ? 'Click dice to roll' : 'Pick a glowing token to move'}
+        </span>
       </div>
     </div>
   );

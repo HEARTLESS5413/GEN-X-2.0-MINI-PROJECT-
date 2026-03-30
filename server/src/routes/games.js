@@ -46,9 +46,10 @@ function getInitialLudoState(player1Id) {
     currentTurn: player1Id,
     dice: null,
     rolled: false,
+    consecutiveSixes: 0,
     tokens: {
-      p1: [0, 0, 0, 0], // positions 0 = home, 1-56 = path, 57 = finished
-      p2: [0, 0, 0, 0],
+      p1: [-1, -1, -1, -1], // positions -1 = base, 0-50 = shared path, 51-56 = home column, 57 = finished
+      p2: [-1, -1, -1, -1],
     },
     finished: { p1: 0, p2: 0 },
   };

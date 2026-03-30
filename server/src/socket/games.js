@@ -157,8 +157,38 @@ function gameHandler(io, socket, prisma) {
       if (state.currentTurn !== socket.userId) return;
       if (state.rolled) return;
 
-      state.dice = Math.floor(Math.random() * 6) + 1;
+      const dice = Math.floor(Math.random() * 6) + 1;
+      state.dice = dice;
       state.rolled = true;
+
+      const isP1 = session.player1Id === socket.userId;
+      const myKey = isP1 ? 'p1' : 'p2';
+
+      if (dice === 6) {
+        state.consecutiveSixes = (state.consecutiveSixes || 0) + 1;
+      } else {
+        state.consecutiveSixes = 0;
+      }
+
+      if (state.consecutiveSixes === 3) {
+        state.rolled = false;
+        state.dice = null;
+        state.consecutiveSixes = 0;
+        state.currentTurn = isP1 ? session.player2Id : session.player1Id;
+      } else {
+        const hasValidMove = state.tokens[myKey].some(pos => {
+          if (pos === -1) return dice === 6;
+          if (pos >= 0) return pos + dice <= 57;
+          return false;
+        });
+
+        if (!hasValidMove) {
+          state.rolled = false;
+          state.dice = null;
+          state.consecutiveSixes = 0;
+          state.currentTurn = isP1 ? session.player2Id : session.player1Id;
+        }
+      }
 
       await prisma.gameSession.update({ where: { id: sessionId }, data: { state } });
       io.to(`game:${sessionId}`).emit('gameUpdate', { sessionId, state, status: 'ACTIVE', winnerId: null, gameType: 'LUDO' });
@@ -173,57 +203,55 @@ function gameHandler(io, socket, prisma) {
       if (state.currentTurn !== socket.userId || !state.rolled) return;
 
       const isP1 = session.player1Id === socket.userId;
-      const playerKey = isP1 ? 'p1' : 'p2';
-      const tokens = state.tokens[playerKey];
+      const myKey = isP1 ? 'p1' : 'p2';
+      const oppKey = isP1 ? 'p2' : 'p1';
+      const tokens = state.tokens[myKey];
+      const oppTokens = state.tokens[oppKey];
       const pos = tokens[tokenIndex];
       const dice = state.dice;
 
-      // Token at home (0) needs a 6 to enter
-      if (pos === 0 && dice !== 6) {
-        state.rolled = false;
-        state.dice = null;
-        if (dice !== 6) {
-          state.currentTurn = isP1 ? session.player2Id : session.player1Id;
-        }
-        await prisma.gameSession.update({ where: { id: sessionId }, data: { state } });
-        io.to(`game:${sessionId}`).emit('gameUpdate', { sessionId, state, status: 'ACTIVE', winnerId: null, gameType: 'LUDO' });
-        return;
-      }
+      if (pos === -1 && dice !== 6) return;
+      if (pos >= 0 && pos + dice > 57) return;
 
-      let newPos;
-      if (pos === 0) {
-        newPos = 1; // Enter the board
-      } else {
-        newPos = pos + dice;
-        if (newPos > 57) {
-          // Can't move past finish
-          state.rolled = false;
-          state.currentTurn = isP1 ? session.player2Id : session.player1Id;
-          await prisma.gameSession.update({ where: { id: sessionId }, data: { state } });
-          io.to(`game:${sessionId}`).emit('gameUpdate', { sessionId, state, status: 'ACTIVE', winnerId: null, gameType: 'LUDO' });
-          return;
-        }
-      }
-
+      let newPos = pos === -1 ? 0 : pos + dice;
       tokens[tokenIndex] = newPos;
+      
+      let extraTurn = dice === 6;
 
-      // Check if token reached finish (57)
-      if (newPos === 57) {
-        state.finished[playerKey]++;
+      if (newPos >= 0 && newPos <= 50) {
+        const myStart = myKey === 'p1' ? 0 : 26;
+        const myAbsPos = (myStart + newPos) % 52;
+        const SAFE_TILES = [0, 8, 13, 21, 26, 34, 39, 47];
+        
+        if (!SAFE_TILES.includes(myAbsPos)) {
+          const oppStart = oppKey === 'p1' ? 0 : 26;
+          for (let i = 0; i < 4; i++) {
+            const oppPos = oppTokens[i];
+            if (oppPos >= 0 && oppPos <= 50) {
+              const oppAbsPos = (oppStart + oppPos) % 52;
+              if (myAbsPos === oppAbsPos) {
+                oppTokens[i] = -1; // Capture
+                extraTurn = true;
+              }
+            }
+          }
+        }
       }
 
-      // Check win (all 4 tokens finished)
+      state.finished[myKey] = tokens.filter(p => p === 57).length;
+      if (newPos === 57) extraTurn = true;
+
       let status = 'ACTIVE';
       let winnerId = null;
-      if (state.finished[playerKey] >= 4) {
+      if (state.finished[myKey] >= 4) {
         status = 'FINISHED';
         winnerId = socket.userId;
       }
 
-      // Next turn (rolling 6 gives extra turn)
       state.rolled = false;
       state.dice = null;
-      if (dice !== 6) {
+      if (!extraTurn) {
+        state.consecutiveSixes = 0;
         state.currentTurn = isP1 ? session.player2Id : session.player1Id;
       }
 
