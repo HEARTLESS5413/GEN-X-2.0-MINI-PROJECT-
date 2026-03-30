@@ -149,7 +149,7 @@ function gameHandler(io, socket, prisma) {
   });
 
   // ==================== LUDO ====================
-  socket.on('ludoRoll', async ({ sessionId }) => {
+  socket.on('ludoRoll', async ({ sessionId, selectedDice }) => {
     try {
       const session = await prisma.gameSession.findUnique({ where: { id: sessionId } });
       if (!session || session.status !== 'ACTIVE') return;
@@ -157,7 +157,7 @@ function gameHandler(io, socket, prisma) {
       if (state.currentTurn !== socket.userId) return;
       if (state.rolled) return;
 
-      const dice = Math.floor(Math.random() * 6) + 1;
+      const dice = selectedDice || (Math.floor(Math.random() * 6) + 1);
       state.dice = dice;
       state.rolled = true;
 

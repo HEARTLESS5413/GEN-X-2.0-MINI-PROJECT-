@@ -456,13 +456,10 @@ function LudoGame({ session, user }: any) {
   const [displayDice, setDisplayDice] = useState<number | null>(session.state.dice);
 
   useEffect(() => {
-    if (session.state.dice && session.state.rolled && session.state.currentTurn !== user?.id) {
-      setDisplayDice(session.state.dice);
-    } else if (session.state.dice && session.state.rolled && !isRolling) {
+    if (session.state.dice) {
       setDisplayDice(session.state.dice);
     }
-    // Removed the automatic clearing to null so users can see their skipped turn rolls.
-  }, [session.state.dice, session.state.rolled, session.state.currentTurn, user?.id, isRolling]);
+  }, [session.state.dice]);
 
   const handleRoll = () => {
     if (!myTurn || session.state.rolled || isRolling) return;
@@ -474,9 +471,12 @@ function LudoGame({ session, user }: any) {
       // Spin animation for 500ms
       if (spins > 10) {
         clearInterval(interval);
+        const finalDice = Math.floor(Math.random() * 6) + 1;
+        setDisplayDice(finalDice);
         setIsRolling(false);
+        
         const socket = getSocket();
-        if (socket) socket.emit('ludoRoll', { sessionId: session.id });
+        if (socket) socket.emit('ludoRoll', { sessionId: session.id, selectedDice: finalDice });
       }
     }, 50);
   };
