@@ -233,22 +233,44 @@ router.delete('/:roomId/queue/:index', auth, async (req, res) => {
   }
 });
 
-// Close watch room
+// Close watch room (host can delete, members can leave)
 router.delete('/:roomId/close', auth, async (req, res) => {
   try {
-    const room = await prisma.watchRoom.findUnique({ where: { id: req.params.roomId } });
+    const room = await prisma.watchRoom.findUnique({
+      where: { id: req.params.roomId },
+      include: { members: true }
+    });
     if (!room) return res.status(404).json({ error: 'Room not found.' });
-    if (room.hostId !== req.user.id) return res.status(403).json({ error: 'Only host can close.' });
 
-    await prisma.watchRoom.delete({ where: { id: req.params.roomId } });
+    const isMember = room.members.some(m => m.userId === req.user.id);
+    const isHost = room.hostId === req.user.id;
 
-    const io = req.app.get('io');
-    io.to(`watch:${req.params.roomId}`).emit('watchRoomClosed', { roomId: req.params.roomId });
+    if (!isMember && !isHost) {
+      return res.status(403).json({ error: 'Not a member of this room.' });
+    }
+
+    if (isHost) {
+      // Host closes = delete room for everyone
+      await prisma.watchRoom.delete({ where: { id: req.params.roomId } });
+      const io = req.app.get('io');
+      io.to(`watch:${req.params.roomId}`).emit('watchRoomClosed', { roomId: req.params.roomId });
+    } else {
+      // Non-host = just leave
+      await prisma.watchRoomMember.deleteMany({
+        where: { roomId: req.params.roomId, userId: req.user.id }
+      });
+      const io = req.app.get('io');
+      io.to(`watch:${req.params.roomId}`).emit('watchMemberLeft', {
+        roomId: req.params.roomId,
+        userId: req.user.id,
+        username: req.user.username
+      });
+    }
 
     res.json({ success: true });
   } catch (error) {
     console.error('Close watch room error:', error);
-    res.status(500).json({ error: 'Server error.' });
+    res.status(500).json({ error: 'Server error: ' + (error.message || 'Unknown') });
   }
 });
 

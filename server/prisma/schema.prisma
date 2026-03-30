@@ -37,6 +37,7 @@ enum NotificationType {
   NEW_POST
   MESSAGE
   GAME_INVITE
+  WATCH_INVITE
   CALL
 }
 
