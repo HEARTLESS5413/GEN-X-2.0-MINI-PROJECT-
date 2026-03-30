@@ -16,6 +16,9 @@ router.post('/create', auth, async (req, res) => {
         hostId: req.user.id,
         videoUrl,
         videoType: videoType || 'youtube',
+        members: {
+          create: { userId: req.user.id }
+        }
       },
       include: {
         host: { select: { id: true, username: true, name: true, avatar: true } },
@@ -23,15 +26,10 @@ router.post('/create', auth, async (req, res) => {
       }
     });
 
-    // Add host as member
-    await prisma.watchRoomMember.create({
-      data: { roomId: room.id, userId: req.user.id }
-    });
-
     res.status(201).json(room);
   } catch (error) {
     console.error('Create watch room error:', error);
-    res.status(500).json({ error: 'Server error.' });
+    res.status(500).json({ error: 'Server error: ' + (error.message || 'Unknown') });
   }
 });
 

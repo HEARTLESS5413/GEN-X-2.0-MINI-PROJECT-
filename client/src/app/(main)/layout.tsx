@@ -7,6 +7,7 @@ import { useNotificationStore } from '@/store/notificationStore';
 import { notificationsAPI } from '@/lib/api';
 import { UPLOADS_URL } from '@/lib/api';
 import CallProvider from '@/components/CallProvider';
+import WatchProvider from '@/components/WatchProvider';
 import styles from './main.module.css';
 
 const navItems = [
@@ -126,10 +127,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Global Call Provider */}
       <CallProvider />
 
-      {/* Main Content */}
-      <main className={styles.mainContent}>
-        {children}
-      </main>
+      {/* Global Watch Provider — wraps main content for floating mini player */}
+      <WatchProvider>
+        {/* Main Content */}
+        <main className={styles.mainContent}>
+          {children}
+        </main>
+      </WatchProvider>
 
       {/* Mobile Bottom Nav */}
       <nav className={styles.mobileNav}>

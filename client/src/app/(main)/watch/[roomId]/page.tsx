@@ -4,12 +4,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { watchAPI, usersAPI, UPLOADS_URL } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
+import { useWatch } from '@/components/WatchProvider';
 import styles from './watchroom.module.css';
 
 export default function WatchRoomPage() {
   const { roomId } = useParams() as { roomId: string };
   const router = useRouter();
   const { user } = useAuthStore();
+  const { joinRoom: registerRoom, leaveRoom: unregisterRoom } = useWatch();
 
   const [room, setRoom] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -79,6 +81,8 @@ export default function WatchRoomPage() {
     try {
       const { data } = await watchAPI.getRoom(roomId);
       setRoom(data);
+      // Register with the global WatchProvider for floating mini player
+      registerRoom(roomId);
     } catch { router.push('/watch'); }
     finally { setLoading(false); }
   };
@@ -107,6 +111,7 @@ export default function WatchRoomPage() {
       await watchAPI.leaveRoom(roomId);
       const socket = getSocket();
       if (socket) socket.emit('leaveWatchRoom', { roomId });
+      unregisterRoom();
       router.push('/watch');
     } catch {}
   };
@@ -115,6 +120,7 @@ export default function WatchRoomPage() {
     if (!confirm('Close this watch party for everyone?')) return;
     try {
       await watchAPI.closeRoom(roomId);
+      unregisterRoom();
       router.push('/watch');
     } catch (e: any) { alert(e.response?.data?.error || 'Failed'); }
   };

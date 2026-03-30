@@ -27,7 +27,10 @@ export default function WatchPage() {
       setCreatedRoomId(data.id);
       setShowCreate(false);
       setVideoUrl('');
-    } catch (err) { console.error(err); }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to create room. Please try again.');
+    }
     finally { setLoading(false); }
   };
 
