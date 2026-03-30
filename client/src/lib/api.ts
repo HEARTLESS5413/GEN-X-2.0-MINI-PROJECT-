@@ -60,6 +60,7 @@ export const usersAPI = {
   getSuggestions: () => api.get('/users/suggestions'),
   updateTheme: (theme: string) => api.put('/users/theme', { theme }),
   getAll: () => api.get('/users/all'),
+  deleteAccount: () => api.delete('/users/account'),
 };
 
 // Posts

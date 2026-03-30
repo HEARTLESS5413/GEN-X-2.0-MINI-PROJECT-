@@ -329,4 +329,32 @@ router.get('/all', auth, async (req, res) => {
   }
 });
 
+// Delete user account permanently
+router.delete('/account', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Delete all related data in proper order (respecting FK constraints)
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { OR: [{ userId }, { actorId: userId }] } }),
+      prisma.like.deleteMany({ where: { userId } }),
+      prisma.comment.deleteMany({ where: { userId } }),
+      prisma.message.deleteMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] } }),
+      prisma.follow.deleteMany({ where: { OR: [{ followerId: userId }, { followingId: userId }] } }),
+      prisma.gameRoomMember.deleteMany({ where: { userId } }),
+      prisma.watchRoomMember.deleteMany({ where: { userId } }),
+      prisma.story.deleteMany({ where: { userId } }),
+      prisma.post.deleteMany({ where: { userId } }),
+      prisma.gameRoom.deleteMany({ where: { hostId: userId } }),
+      prisma.watchRoom.deleteMany({ where: { hostId: userId } }),
+      prisma.user.delete({ where: { id: userId } }),
+    ]);
+
+    res.json({ message: 'Account deleted permanently.' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ error: 'Failed to delete account. Please try again.' });
+  }
+});
+
 module.exports = router;
